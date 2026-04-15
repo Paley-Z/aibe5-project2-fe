@@ -1,0 +1,192 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-bg: #1a1a1a;
+  --light-dark: #2a2a2a;
+  --green-accent: #9ba882;
+  --green-dark: #7a8a62;
+  --text-light: #ffffff;
+  --text-secondary: #b0b0b0;
+}
+
+body {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--dark-bg);
+  padding: 1.5rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 3rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-menu a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  transition: color 0.3s ease;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+  color: var(--green-accent);
+}
+
+.nav-button {
+  background-color: var(--green-accent);
+  color: var(--dark-bg);
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-family: inherit;
+}
+
+.nav-button:hover {
+  background-color: var(--green-dark);
+}
+
+/* Content */
+.mypage-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--green-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--dark-bg);
+  flex-shrink: 0;
+}
+
+.username {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.email {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* Cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--light-dark);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--green-accent);
+}
+
+.card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  flex: 1;
+}
+
+.card li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid #333;
+}
+
+.card li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.card li span:first-child {
+  color: var(--text-secondary);
+}
+
+.btn-edit {
+  background-color: transparent;
+  border: 1px solid var(--green-accent);
+  color: var(--green-accent);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit:hover {
+  background-color: var(--green-accent);
+  color: var(--dark-bg);
+}
+
+@media (max-width: 768px) {
+  .nav-menu { display: none; }
+  .cards-grid { grid-template-columns: 1fr; }
+}
