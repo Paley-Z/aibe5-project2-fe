@@ -75,11 +75,6 @@ export default function AppHeader({ activePage }: HeaderProps) {
 
   const unreadCount = notifications.filter((notification) => !notification.read).length;
 
-  function closePanels() {
-    setDropdownOpen(false);
-    setNotificationOpen(false);
-  }
-
   function handleLogout() {
     logout();
     window.location.href = '/';

@@ -39,8 +39,10 @@ if (!routeAccess.allowed) {
   createRoot(document.getElementById('root')!).render(
     createElement(StrictMode, null, createElement(Component))
   );
-} else {
+} else if (path === '/') {
   const { mount } = await import('svelte');
   const { default: MainPage } = await import('./mainpage/main.svelte');
   mount(MainPage, { target: document.getElementById('root')! });
+} else {
+  window.location.href = '/error?code=404';
 }
