@@ -8,12 +8,19 @@ export interface RouteAccessResult {
 }
 
 const AUTH_REQUIRED_PATHS = new Set(['/mypage', '/project']);
+const ADMIN_ONLY_PATHS = new Set(['/announcement']);
 
 export function hasRole(user: User | null, ...roles: UserRole[]): boolean {
   return !!user && roles.includes(user.role);
 }
 
 export function canAccessRoute(path: string, user: User | null): RouteAccessResult {
+  if (ADMIN_ONLY_PATHS.has(path)) {
+    if (!user) return { allowed: false, code: 401 };
+    if (user.role !== 'ROLE_ADMIN') return { allowed: false, code: 403 };
+    return { allowed: true };
+  }
+
   if (!AUTH_REQUIRED_PATHS.has(path)) {
     return { allowed: true };
   }

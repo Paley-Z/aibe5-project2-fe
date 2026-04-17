@@ -1,0 +1,188 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-bg: #1a1a1a;
+  --light-dark: #2a2a2a;
+  --green-accent: #9ba882;
+  --green-dark: #7a8a62;
+  --text-light: #ffffff;
+  --text-secondary: #b0b0b0;
+}
+
+body {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+}
+
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.register-theme-toggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: var(--light-dark);
+  color: var(--text-light);
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: var(--panel-shadow);
+}
+
+.register-card {
+  background-color: var(--light-dark);
+  border-radius: 20px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 460px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.register-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.register-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input-group input,
+.input-group select {
+  background-color: var(--dark-bg);
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  color: var(--text-light);
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.input-group select option {
+  background-color: var(--light-dark);
+}
+
+.input-group input::placeholder {
+  color: #555;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  border-color: var(--green-accent);
+}
+
+.role-select-wrapper {
+  position: relative;
+}
+
+.role-select-wrapper::after {
+  content: '▾';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.register-error {
+  font-size: 0.85rem;
+  color: #e07070;
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.register-success {
+  font-size: 0.85rem;
+  color: var(--green-accent);
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.register-btn {
+  background-color: var(--green-accent);
+  color: var(--dark-bg);
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.register-btn:hover {
+  background-color: var(--green-dark);
+}
+
+.register-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.register-footer {
+  text-align: center;
+  margin-top: 1.75rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.register-footer a {
+  color: var(--green-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-footer a:hover {
+  text-decoration: underline;
+}

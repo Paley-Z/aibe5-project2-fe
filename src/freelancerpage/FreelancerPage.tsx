@@ -52,8 +52,8 @@ export default function FreelancerPage() {
       <main className="freelancer-content">
         <div className="fl-page-header">
           <div>
-            <h1 className="fl-page-title">도우미 목록</h1>
-            <p className="fl-page-subtitle">검증된 도우미를 찾아보세요.</p>
+            <h1 className="fl-page-title">헬퍼 목록</h1>
+            <p className="fl-page-subtitle">검증된 헬퍼를 찾아보세요.</p>
           </div>
         </div>
 

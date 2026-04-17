@@ -11,7 +11,6 @@
     getNotificationsForUser,
     markAllNotificationsAsRead,
     markNotificationRead,
-    sendAnnouncement,
   } from '../store/notificationStore';
 
   export let activePage: string = '';
@@ -21,10 +20,6 @@
   let notifications: AppNotification[] = [];
   let dropdownOpen = false;
   let notificationOpen = false;
-  let announcementOpen = false;
-  let announcementTitle = '';
-  let announcementMessage = '';
-  let announcementFeedback = '';
 
   $: unreadCount = notifications.filter((notification) => !notification.read).length;
 
@@ -57,7 +52,6 @@
   function closePanels() {
     dropdownOpen = false;
     notificationOpen = false;
-    announcementOpen = false;
   }
 
   function handleLogout() {
@@ -68,20 +62,11 @@
   function toggleDropdown() {
     dropdownOpen = !dropdownOpen;
     notificationOpen = false;
-    announcementOpen = false;
   }
 
   function toggleNotifications() {
     notificationOpen = !notificationOpen;
     dropdownOpen = false;
-    announcementOpen = false;
-  }
-
-  function openAnnouncementPanel() {
-    announcementOpen = true;
-    dropdownOpen = false;
-    notificationOpen = false;
-    announcementFeedback = '';
   }
 
   function handleNotificationSelect(notification: AppNotification) {
@@ -109,24 +94,6 @@
     }
 
     markAllNotificationsAsRead(user.email);
-  }
-
-  function handleAnnouncementSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    if (!canSendAnnouncement(user)) {
-      return;
-    }
-
-    const title = announcementTitle.trim();
-    const message = announcementMessage.trim();
-    if (!title || !message) {
-      return;
-    }
-
-    const sentCount = sendAnnouncement(user.name, title, message, user.email);
-    announcementTitle = '';
-    announcementMessage = '';
-    announcementFeedback = sentCount > 0 ? `${sentCount}명에게 공지를 발송했습니다.` : '발송 대상이 없습니다.';
   }
 
   function handleClickOutside(event: MouseEvent) {
@@ -228,37 +195,6 @@
           </div>
         {/if}
 
-        {#if announcementOpen && canSendAnnouncement(user)}
-          <div class="header-panel header-announcement-panel">
-            <div class="header-panel-head">
-              <div>
-                <p class="header-panel-eyebrow">System Notice</p>
-                <h3>공지 발송</h3>
-              </div>
-              <button type="button" class="header-panel-action" onclick={closePanels}>닫기</button>
-            </div>
-
-            <form class="header-announcement-form" onsubmit={handleAnnouncementSubmit}>
-              <input
-                type="text"
-                class="header-announcement-input"
-                placeholder="공지 제목"
-                bind:value={announcementTitle}
-              />
-              <textarea
-                class="header-announcement-textarea"
-                placeholder="공지 내용을 입력하세요."
-                rows="4"
-                bind:value={announcementMessage}
-              ></textarea>
-              <div class="header-announcement-footer">
-                <p class="header-announcement-feedback">{announcementFeedback}</p>
-                <button type="submit" class="header-announcement-submit">발송</button>
-              </div>
-            </form>
-          </div>
-        {/if}
-
         <div class="header-user-area">
           <button type="button" class="header-profile" onclick={toggleDropdown}>
             <span class="header-username">{user.name}</span>
@@ -273,7 +209,7 @@
               <a href="/mypage" class="header-dropdown-item">마이페이지</a>
               <a href="/project" class="header-dropdown-item">프로젝트</a>
               {#if canSendAnnouncement(user)}
-                <button type="button" class="header-dropdown-item" onclick={openAnnouncementPanel}>공지 발송</button>
+                <a href="/announcement" class="header-dropdown-item">공지 발송</a>
               {/if}
               <button type="button" class="header-dropdown-item danger" onclick={handleLogout}>로그아웃</button>
             </div>

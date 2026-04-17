@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './login.css';
-import { DEMO_ACCOUNTS, setUser, type DemoAccount } from '../store/appAuth';
+import { DEMO_ACCOUNTS, findAccount, setUser, type DemoAccount } from '../store/appAuth';
 import { getTheme, setTheme, THEME_EVENT, type AppTheme } from '../store/theme';
 
 export default function Login() {
@@ -30,9 +30,7 @@ export default function Login() {
 
     // TODO: POST /api/auth/login { email, password }
     //       → response: { name, email, role, avatar? }
-    const matched = DEMO_ACCOUNTS.find(
-      a => a.email === email && a.password === password
-    );
+    const matched = findAccount(email, password);
 
     if (!matched) {
       setError('이메일 또는 비밀번호가 올바르지 않습니다.');
@@ -116,7 +114,7 @@ export default function Login() {
 
         <div className="login-footer">
           <span>계정이 없으신가요?</span>
-          <a href="#">회원가입</a>
+          <a href="/register">회원가입</a>
         </div>
 
         <div className="login-test-hint">

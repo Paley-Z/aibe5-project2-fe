@@ -11,7 +11,9 @@ const user = getUser();
 const routeAccess = canAccessRoute(path, user);
 
 const reactPages: Record<string, () => Promise<{ default: React.ComponentType }>> = {
-  '/login':       () => import('./loginpage/Login'),
+  '/login':           () => import('./loginpage/Login'),
+  '/register':        () => import('./registerpage/RegisterPage'),
+  '/announcement':    () => import('./announcementpage/AnnouncementPage'),
   '/mypage':      () => import('./mypage/MyPage2'),
   '/project':     () => import('./projectpage/ProjectPage3'),
   '/freelancers': () => import('./freelancerpage/FreelancerPage'),
