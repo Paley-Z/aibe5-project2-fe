@@ -1,5 +1,24 @@
 import { getKnownUsers } from './appAuth';
 
+export type AnnouncementTarget = 'ALL' | 'ROLE_USER' | 'ROLE_FREELANCER';
+export type AnnouncementType = 'GENERAL' | 'URGENT' | 'SYSTEM' | 'EVENT';
+
+export interface AnnouncementRecord {
+  id: string;
+  senderName: string;
+  senderEmail: string;
+  title: string;
+  message: string;
+  target: AnnouncementTarget;
+  announcementType: AnnouncementType;
+  sentAt: string;
+  recipientCount: number;
+  scheduled: boolean;
+  scheduledAt?: string;
+}
+
+const ANNOUNCEMENT_HISTORY_KEY = 'stella_announcement_history';
+
 export type NotificationType =
   | 'PROJECT_STATUS'
   | 'PROPOSAL_RECEIVED'
@@ -142,6 +161,66 @@ export function sendAnnouncement(
       link: '/',
     })),
   );
+
+  return recipients.length;
+}
+
+export function getAnnouncementHistory(): AnnouncementRecord[] {
+  const storage = getStorage();
+  if (!storage) return [];
+  const stored = storage.getItem(ANNOUNCEMENT_HISTORY_KEY);
+  return stored ? (JSON.parse(stored) as AnnouncementRecord[]) : [];
+}
+
+export function sendAnnouncementWithOptions(
+  senderName: string,
+  senderEmail: string,
+  title: string,
+  message: string,
+  target: AnnouncementTarget,
+  announcementType: AnnouncementType,
+  scheduledAt?: string,
+): number {
+  const users = getKnownUsers();
+  const recipients = users.filter((u) => {
+    if (u.email === senderEmail) return false;
+    if (target === 'ROLE_USER') return u.role === 'ROLE_USER';
+    if (target === 'ROLE_FREELANCER') return u.role === 'ROLE_FREELANCER';
+    return true;
+  });
+
+  const scheduled = !!scheduledAt;
+
+  if (!scheduled) {
+    createNotifications(
+      recipients.map((u) => ({
+        userEmail: u.email,
+        type: 'ANNOUNCEMENT' as const,
+        title,
+        message: `${message}\n\n발송자: ${senderName}`,
+        link: '/',
+      })),
+    );
+  }
+
+  const record: AnnouncementRecord = {
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`,
+    senderName,
+    senderEmail,
+    title,
+    message,
+    target,
+    announcementType,
+    sentAt: new Date().toISOString(),
+    recipientCount: recipients.length,
+    scheduled,
+    scheduledAt,
+  };
+
+  const storage = getStorage();
+  if (storage) {
+    storage.setItem(ANNOUNCEMENT_HISTORY_KEY, JSON.stringify([record, ...getAnnouncementHistory()]));
+  }
 
   return recipients.length;
 }

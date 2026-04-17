@@ -10,7 +10,6 @@ import {
   getNotificationsForUser,
   markAllNotificationsAsRead,
   markNotificationRead,
-  sendAnnouncement,
 } from '../store/notificationStore';
 
 interface HeaderProps {
@@ -38,10 +37,6 @@ export default function AppHeader({ activePage }: HeaderProps) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [announcementOpen, setAnnouncementOpen] = useState(false);
-  const [announcementTitle, setAnnouncementTitle] = useState('');
-  const [announcementMessage, setAnnouncementMessage] = useState('');
-  const [announcementFeedback, setAnnouncementFeedback] = useState('');
   const actionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,7 +79,6 @@ export default function AppHeader({ activePage }: HeaderProps) {
   function closePanels() {
     setDropdownOpen(false);
     setNotificationOpen(false);
-    setAnnouncementOpen(false);
   }
 
   function handleLogout() {
@@ -95,13 +89,11 @@ export default function AppHeader({ activePage }: HeaderProps) {
   function handleNotificationToggle() {
     setNotificationOpen((open) => !open);
     setDropdownOpen(false);
-    setAnnouncementOpen(false);
   }
 
   function handleProfileToggle() {
     setDropdownOpen((open) => !open);
     setNotificationOpen(false);
-    setAnnouncementOpen(false);
   }
 
   function handleNotificationSelect(notification: AppNotification) {
@@ -129,31 +121,6 @@ export default function AppHeader({ activePage }: HeaderProps) {
     }
 
     markAllNotificationsAsRead(user.email);
-  }
-
-  function handleAnnouncementOpen() {
-    setAnnouncementOpen(true);
-    setDropdownOpen(false);
-    setNotificationOpen(false);
-    setAnnouncementFeedback('');
-  }
-
-  function handleAnnouncementSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user || !canSendAnnouncement(user)) {
-      return;
-    }
-
-    const title = announcementTitle.trim();
-    const message = announcementMessage.trim();
-    if (!title || !message) {
-      return;
-    }
-
-    const sentCount = sendAnnouncement(user.name, title, message, user.email);
-    setAnnouncementTitle('');
-    setAnnouncementMessage('');
-    setAnnouncementFeedback(sentCount > 0 ? `${sentCount}명에게 공지를 발송했습니다.` : '발송 대상이 없습니다.');
   }
 
   return (
@@ -236,41 +203,6 @@ export default function AppHeader({ activePage }: HeaderProps) {
               </div>
             )}
 
-            {announcementOpen && canSendAnnouncement(user) && (
-              <div className="header-panel header-announcement-panel">
-                <div className="header-panel-head">
-                  <div>
-                    <p className="header-panel-eyebrow">System Notice</p>
-                    <h3>공지 발송</h3>
-                  </div>
-                  <button type="button" className="header-panel-action" onClick={closePanels}>
-                    닫기
-                  </button>
-                </div>
-
-                <form className="header-announcement-form" onSubmit={handleAnnouncementSubmit}>
-                  <input
-                    type="text"
-                    className="header-announcement-input"
-                    placeholder="공지 제목"
-                    value={announcementTitle}
-                    onChange={(event) => setAnnouncementTitle(event.target.value)}
-                  />
-                  <textarea
-                    className="header-announcement-textarea"
-                    placeholder="공지 내용을 입력하세요."
-                    rows={4}
-                    value={announcementMessage}
-                    onChange={(event) => setAnnouncementMessage(event.target.value)}
-                  />
-                  <div className="header-announcement-footer">
-                    <p className="header-announcement-feedback">{announcementFeedback}</p>
-                    <button type="submit" className="header-announcement-submit">발송</button>
-                  </div>
-                </form>
-              </div>
-            )}
-
             <div className="header-user-area">
               <button type="button" className="header-profile" onClick={handleProfileToggle}>
                 <span className="header-username">{user.name}</span>
@@ -284,9 +216,7 @@ export default function AppHeader({ activePage }: HeaderProps) {
                   <a href="/mypage" className="header-dropdown-item">마이페이지</a>
                   <a href="/project" className="header-dropdown-item">프로젝트</a>
                   {canSendAnnouncement(user) && (
-                    <button type="button" className="header-dropdown-item" onClick={handleAnnouncementOpen}>
-                      공지 발송
-                    </button>
+                    <a href="/announcement" className="header-dropdown-item">공지 발송</a>
                   )}
                   <button type="button" className="header-dropdown-item danger" onClick={handleLogout}>로그아웃</button>
                 </div>
