@@ -6,6 +6,17 @@ import { initTheme } from './store/theme';
 
 initTheme();
 
+// Mount chat widget on every page
+(async () => {
+  const chatRoot = document.createElement('div');
+  chatRoot.id = 'chat-widget-root';
+  document.body.appendChild(chatRoot);
+  const { createRoot } = await import('react-dom/client');
+  const { default: ChatWidget } = await import('./components/ChatWidget');
+  const { StrictMode, createElement } = await import('react');
+  createRoot(chatRoot).render(createElement(StrictMode, null, createElement(ChatWidget)));
+})();
+
 const path = window.location.pathname;
 const user = getUser();
 const routeAccess = canAccessRoute(path, user);
@@ -17,6 +28,7 @@ const reactPages: Record<string, () => Promise<{ default: React.ComponentType }>
   '/mypage':      () => import('./mypage/MyPage2'),
   '/project':     () => import('./projectpage/ProjectPage3'),
   '/freelancers': () => import('./freelancerpage/FreelancerPage'),
+  '/ai-match':    () => import('./aimatchpage/AiMatchPage'),
   '/error':       () => import('./errorpage/ErrorPage'),
 };
 
