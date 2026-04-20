@@ -7,6 +7,8 @@ import { canReportReview } from '../store/accessControl';
 import { addProposal } from '../store/appProposalStore';
 import { getReviewsForFreelancer, reportReview } from '../store/appReviewStore';
 import { createNotification } from '../store/notificationStore';
+import { makeConvId, registerConversation, CHAT_OPEN_EVENT } from '../store/chatStore';
+import type { Conversation } from '../store/chatStore';
 
 const MOCK_USER_PROJECTS = [
   { id: 2, title: '주민센터 서류 발급', type: '관공서', date: '2025.04.22', time: '14:00', location: '서울 마포구 합정동', description: '주민등록등본 발급이 필요합니다.' },
@@ -76,6 +78,20 @@ export default function FreelancerDetailPage2() {
 
     setSelectedProjectId(null);
     setProposing(false);
+  }
+
+  function handleStartChat() {
+    if (!user || !freelancer) return;
+    const conv: Conversation = {
+      id: makeConvId(user.email, freelancer.id),
+      userEmail: user.email,
+      userName: user.name,
+      freelancerId: freelancer.id,
+      freelancerName: freelancer.name,
+      freelancerEmail: freelancer.accountEmail ?? '',
+    };
+    registerConversation(conv);
+    window.dispatchEvent(new CustomEvent(CHAT_OPEN_EVENT, { detail: conv }));
   }
 
   function handleReviewReport() {
@@ -149,7 +165,10 @@ export default function FreelancerDetailPage2() {
             </ul>
 
             {user?.role === 'ROLE_USER' && (
-              <button className="fd-propose-btn" onClick={() => setProposing(true)}>프로젝트 제안하기</button>
+              <div className="fd-action-row">
+                <button className="fd-propose-btn" onClick={() => setProposing(true)}>프로젝트 제안하기</button>
+                <button className="fd-chat-btn" onClick={handleStartChat}>채팅하기</button>
+              </div>
             )}
           </div>
 
