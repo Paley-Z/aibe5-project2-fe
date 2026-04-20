@@ -14,6 +14,7 @@ import {
   deleteReview,
   getFreelancerReviewSummary,
   getReportedReviews,
+  getReviews,
   getReviewsByAuthor,
   getReviewsForFreelancer,
   getReviewTags,
@@ -25,10 +26,12 @@ import { createNotification } from '../store/notificationStore';
 import VerifyTab, { type VerifyRequest, STATUS_LABEL } from './tabs/VerifyTab';
 import ReviewsTab from './tabs/ReviewsTab';
 import ReportsTab from './tabs/ReportsTab';
+import UsageReportTab from './tabs/UsageReportTab';
+import { getProposals, type Proposal } from '../store/appProposalStore';
 
 type VerifyStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 type UserTab = 'account' | 'reviews' | 'certify';
-type AdminTab = 'dashboard' | 'freelancers' | 'projects' | 'verify' | 'reports';
+type AdminTab = 'dashboard' | 'freelancers' | 'projects' | 'verify' | 'reports' | 'usage-report';
 type Tab = UserTab | AdminTab;
 
 const INITIAL_VERIFY_REQUESTS: VerifyRequest[] = [
@@ -75,6 +78,7 @@ export default function MyPage2() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [reviews, setReviews] = useState<ReviewRecord[]>([]);
   const [reportedReviews, setReportedReviews] = useState<ReviewRecord[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [editRating, setEditRating] = useState(5);
   const [editTags, setEditTags] = useState<string[]>([]);
@@ -91,7 +95,7 @@ export default function MyPage2() {
     const userTabs: UserTab[] = nextUser.role === 'ROLE_FREELANCER'
       ? ['account', 'reviews', 'certify']
       : ['account', 'reviews'];
-    const adminTabs: AdminTab[] = ['dashboard', 'freelancers', 'projects', 'verify', 'reports'];
+    const adminTabs: AdminTab[] = ['dashboard', 'freelancers', 'projects', 'verify', 'reports', 'usage-report'];
     const allowedTabs = nextUser.role === 'ROLE_ADMIN' ? adminTabs : userTabs;
 
     return (allowedTabs as Tab[]).includes(requestedTab as Tab)
@@ -130,6 +134,7 @@ export default function MyPage2() {
 
     const matchedFreelancer = FREELANCERS.find((f) => f.accountEmail === nextUser.email);
     setProjects(getProjects());
+    setProposals(getProposals());
     setReportedReviews(getReportedReviews());
     setReviews(
       nextUser.role === 'ROLE_FREELANCER' && matchedFreelancer
@@ -325,6 +330,7 @@ export default function MyPage2() {
               <button className={`tab-btn${activeTab === 'projects' ? ' active' : ''}`} onClick={() => setActiveTab('projects')}>프로젝트 관리</button>
               <button className={`tab-btn${activeTab === 'verify' ? ' active' : ''}`} onClick={() => setActiveTab('verify')}>검증 처리</button>
               <button className={`tab-btn${activeTab === 'reports' ? ' active' : ''}`} onClick={() => setActiveTab('reports')}>리뷰/신고 처리</button>
+              <button className={`tab-btn${activeTab === 'usage-report' ? ' active' : ''}`} onClick={() => setActiveTab('usage-report')}>이용 통계</button>
             </>
           )}
         </div>
@@ -510,6 +516,15 @@ export default function MyPage2() {
             reportedReviews={reportedReviews}
             handleBlindToggle={handleBlindToggle}
             handleReportClear={handleReportClear}
+          />
+        )}
+
+        {activeTab === 'usage-report' && isAdmin && (
+          <UsageReportTab
+            projects={projects}
+            reviews={getReviews(true)}
+            proposals={proposals}
+            freelancers={freelancerSummaries}
           />
         )}
       </main>

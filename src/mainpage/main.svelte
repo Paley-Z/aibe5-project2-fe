@@ -37,7 +37,7 @@
           이 여러 치매 주문을 사용해 드릴 관심이 있습니다. 이 여러 치매 주문을 사용해 주시겠어요?
         </p>
         <div class="button-group">
-          <button class="btn-primary">시작하기</button>
+          <button class="btn-primary" onclick={() => window.location.href = '/ai-match'}>시작하기</button>
           <button class="btn-secondary">자세히 보기</button>
         </div>
       </div>
