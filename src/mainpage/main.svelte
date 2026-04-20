@@ -103,8 +103,8 @@
             <span class="stat-label">메이트 신원 검증</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number">24/7</span>
-            <span class="stat-label">서비스 운영</span>
+            <span class="stat-number">실시간</span>
+            <span class="stat-label">프로젝트 상태 관리</span>
           </div>
           <div class="stat-item">
             <span class="stat-number">역할</span>
