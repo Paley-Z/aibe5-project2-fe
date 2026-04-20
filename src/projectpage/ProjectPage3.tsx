@@ -388,7 +388,7 @@ export default function ProjectPage3() {
                       <span>위치 {project.location}</span>
                     </div>
                     {project.freelancerName && (
-                      <div className="project-card-freelancer">담당 헬퍼: {project.freelancerName}</div>
+                      <div className="project-card-freelancer">담당 메이트: {project.freelancerName}</div>
                     )}
                   </li>
                 ))}
@@ -430,7 +430,7 @@ export default function ProjectPage3() {
               <li><span>위치</span><span>{selectedProject.location}</span></li>
               <li><span>등록일</span><span>{selectedProject.createdAt}</span></li>
               {selectedProject.freelancerName && (
-                <li><span>담당 헬퍼</span><span>{selectedProject.freelancerName}</span></li>
+                <li><span>담당 메이트</span><span>{selectedProject.freelancerName}</span></li>
               )}
             </ul>
 

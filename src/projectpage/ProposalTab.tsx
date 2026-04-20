@@ -51,7 +51,7 @@ export default function ProposalTab({ proposals, isFreelancer, onAction, onWithd
                   </>
                 ) : (
                   <>
-                    <span>헬퍼: {proposal.freelancerName}</span>
+                    <span>메이트: {proposal.freelancerName}</span>
                     <span>일정: {proposal.date} {proposal.time}</span>
                     <span>위치: {proposal.location}</span>
                   </>

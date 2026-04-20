@@ -98,7 +98,7 @@ export default function UsageReportTab({ projects, reviews, proposals, freelance
           <strong className="metric-value">{totalProposals}</strong>
         </div>
         <div className="metric-card">
-          <span className="metric-label">검증 헬퍼</span>
+          <span className="metric-label">검증 메이트</span>
           <strong className="metric-value">{verifiedFreelancers} / {freelancers.length}</strong>
         </div>
         <div className="metric-card">
@@ -140,7 +140,7 @@ export default function UsageReportTab({ projects, reviews, proposals, freelance
         <BarRow label="거절됨" count={rejectedProposals} total={totalProposals} color="#c0392b" />
       </div>
 
-      <h2 className="report-section-title">헬퍼 통계</h2>
+      <h2 className="report-section-title">메이트 통계</h2>
       <div className="admin-list">
         {freelancers.map((f) => (
           <div key={f.id} className="admin-item">

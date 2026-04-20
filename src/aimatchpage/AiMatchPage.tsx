@@ -342,8 +342,8 @@ export default function AiMatchPage() {
         {step === 1 && (
           <>
             <div className="am-page-title">
-              <h1>AI 헬퍼 매칭</h1>
-              <p>조건을 입력하면 AI가 가장 적합한 헬퍼를 추천해드립니다.</p>
+              <h1>AI 메이트 매칭</h1>
+              <p>조건을 입력하면 AI가 가장 적합한 메이트를 추천해드립니다.</p>
             </div>
 
             <div className="am-section">
@@ -364,7 +364,7 @@ export default function AiMatchPage() {
 
             <div className="am-section">
               <div className="am-section-label">
-                어느 지역에서 활동하는 헬퍼를 원하시나요?
+                어느 지역에서 활동하는 메이트를 원하시나요?
                 {form.region.district && (
                   <span className="am-region-breadcrumb">
                     {selectedRegionText}
@@ -402,7 +402,7 @@ export default function AiMatchPage() {
         {step === 2 && (
           <div className="am-loading-wrap">
             <div className="am-spinner" />
-            <p className="am-loading-title">AI가 최적의 헬퍼를 찾고 있습니다</p>
+            <p className="am-loading-title">AI가 최적의 메이트를 찾고 있습니다</p>
             <ul className="am-step-list">
               {LOADING_STEPS.map((s, i) => {
                 const isDone   = doneSteps.has(i);
@@ -446,7 +446,7 @@ export default function AiMatchPage() {
                       <div className="am-card-name-row">
                         {rank === 0 && <span className="am-rank-badge">AI 추천</span>}
                         <span className="am-card-name">{r.freelancer.name}</span>
-                        {r.freelancer.verified && <span className="am-verified-dot">✦ 인증</span>}
+                        {r.freelancer.verified && <span className="am-verified-dot">✦ 인증됨</span>}
                       </div>
                       <div className="am-badge-row">
                         <span className="am-stat-chip">재고용률 {r.reHireRate}%</span>

@@ -11,8 +11,8 @@ function handleCardPointerMove(event: ReactPointerEvent<HTMLLIElement>) {
   const rect = card.getBoundingClientRect();
   const pointerX = (event.clientX - rect.left) / rect.width;
   const pointerY = (event.clientY - rect.top) / rect.height;
-  const rotateY = (pointerX - 0.5) * 18;
-  const rotateX = (0.5 - pointerY) * 16;
+  const rotateY = (pointerX - 0.5) * 10;
+  const rotateX = (0.5 - pointerY) * 9;
 
   card.style.setProperty('--card-rotate-x', `${rotateX.toFixed(2)}deg`);
   card.style.setProperty('--card-rotate-y', `${rotateY.toFixed(2)}deg`);
@@ -52,8 +52,8 @@ export default function FreelancerPage() {
       <main className="freelancer-content">
         <div className="fl-page-header">
           <div>
-            <h1 className="fl-page-title">헬퍼 목록</h1>
-            <p className="fl-page-subtitle">검증된 헬퍼를 찾아보세요.</p>
+            <h1 className="fl-page-title">메이트 목록</h1>
+            <p className="fl-page-subtitle">검증된 메이트를 찾아보세요.</p>
           </div>
         </div>
 

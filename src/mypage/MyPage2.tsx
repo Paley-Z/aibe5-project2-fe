@@ -326,7 +326,7 @@ export default function MyPage2() {
           {isAdmin && (
             <>
               <button className={`tab-btn${activeTab === 'dashboard' ? ' active' : ''}`} onClick={() => setActiveTab('dashboard')}>대시보드</button>
-              <button className={`tab-btn${activeTab === 'freelancers' ? ' active' : ''}`} onClick={() => setActiveTab('freelancers')}>헬퍼 관리</button>
+              <button className={`tab-btn${activeTab === 'freelancers' ? ' active' : ''}`} onClick={() => setActiveTab('freelancers')}>메이트 관리</button>
               <button className={`tab-btn${activeTab === 'projects' ? ' active' : ''}`} onClick={() => setActiveTab('projects')}>프로젝트 관리</button>
               <button className={`tab-btn${activeTab === 'verify' ? ' active' : ''}`} onClick={() => setActiveTab('verify')}>검증 처리</button>
               <button className={`tab-btn${activeTab === 'reports' ? ' active' : ''}`} onClick={() => setActiveTab('reports')}>리뷰/신고 처리</button>
@@ -443,7 +443,7 @@ export default function MyPage2() {
         {activeTab === 'dashboard' && isAdmin && (
           <div className="admin-grid">
             <div className="metric-card">
-              <span className="metric-label">헬퍼</span>
+              <span className="metric-label">메이트</span>
               <strong className="metric-value">{adminMetrics.freelancerCount}</strong>
             </div>
             <div className="metric-card">

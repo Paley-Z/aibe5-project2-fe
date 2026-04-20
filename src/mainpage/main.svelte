@@ -38,9 +38,9 @@
         </p>
         <div class="button-group">
           <button class="btn-primary" onclick={() => window.location.href = '/ai-match'}>
-            프로젝트 등록하기
+            AI 메이트 매칭
           </button>
-          <button class="btn-secondary">메이트 둘러보기</button>
+          <button class="btn-secondary" onclick={() => window.location.href = '/freelancers'}>메이트 목록 보기</button>
         </div>
       </div>
     </div>

@@ -123,7 +123,7 @@
       <li><a href="/#services" class={activePage === 'services' ? 'active' : ''}>SERVICES</a></li>
       <li><a href="/#about" class={activePage === 'about' ? 'active' : ''}>ABOUT</a></li>
       <li><a href="/#contact" class={activePage === 'contact' ? 'active' : ''}>CONTACT</a></li>
-      <li><a href="/freelancers" class={activePage === 'freelancers' ? 'active' : ''}>HELPERS</a></li>
+      <li><a href="/freelancers" class={activePage === 'freelancers' ? 'active' : ''}>MATES</a></li>
     </ul>
 
     {#if user}

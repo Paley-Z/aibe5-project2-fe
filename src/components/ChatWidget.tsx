@@ -124,7 +124,7 @@ export default function ChatWidget() {
     user.role === 'ROLE_USER' ? conv.freelancerName : conv.userName;
 
   const partnerLabel = (conv: Conversation) =>
-    user.role === 'ROLE_USER' ? '헬퍼' : '보호자';
+    user.role === 'ROLE_USER' ? '메이트' : '보호자';
 
   return (
     <div className="chat-widget-container">
@@ -152,7 +152,7 @@ export default function ChatWidget() {
                   <div className="chat-widget-subtitle">
                     {view === 'chat' && activeConv
                       ? partnerLabel(activeConv)
-                      : (user.role === 'ROLE_USER' ? '헬퍼와 대화' : '보호자와 대화')}
+                      : (user.role === 'ROLE_USER' ? '메이트와 대화' : '보호자와 대화')}
                   </div>
                 </div>
               </div>
@@ -171,10 +171,10 @@ export default function ChatWidget() {
                     </svg>
                   </div>
                   <p className="chat-empty-title">
-                    연결된 {user.role === 'ROLE_USER' ? '헬퍼' : '보호자'}가 없습니다
+                    연결된 {user.role === 'ROLE_USER' ? '메이트' : '보호자'}가 없습니다
                   </p>
                   {user.role === 'ROLE_USER' && (
-                    <p className="chat-empty-hint">헬퍼에게 제안을 보내면<br />채팅이 활성화됩니다.</p>
+                    <p className="chat-empty-hint">메이트에게 제안을 보내면<br />채팅이 활성화됩니다.</p>
                   )}
                 </div>
               ) : (

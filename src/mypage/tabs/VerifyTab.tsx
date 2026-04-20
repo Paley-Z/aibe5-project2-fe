@@ -109,7 +109,7 @@ export default function VerifyTab({
         <div className="vd-overlay" onClick={() => setVerifyDetailId(null)}>
           <div className="vd-modal" onClick={(e) => e.stopPropagation()}>
             <div className="vd-modal-head">
-              <h2>헬퍼 상세 정보</h2>
+              <h2>메이트 상세 정보</h2>
               <button type="button" className="avatar-modal-close" onClick={() => setVerifyDetailId(null)}>✕</button>
             </div>
 

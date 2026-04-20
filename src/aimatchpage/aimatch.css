@@ -309,8 +309,13 @@
   border-radius: 6px;
 }
 .am-verified-dot {
-  font-size: 0.75rem;
-  color: var(--green-accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  background: rgba(212, 168, 75, 0.15);
+  color: #d4a84b;
+  border: 1px solid rgba(212, 168, 75, 0.35);
 }
 
 /* Badge row */

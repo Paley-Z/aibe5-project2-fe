@@ -54,6 +54,16 @@
   margin-top: 1rem;
 }
 
+.button-group .btn-primary {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.button-group .btn-secondary {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
+
 .btn-primary {
   background-color: var(--green-accent);
   color: var(--dark-bg);

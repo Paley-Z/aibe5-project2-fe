@@ -648,6 +648,14 @@ body {
   height: 180px;
 }
 
+:root[data-theme='light'] .fl-card {
+  border-color: var(--line-color);
+}
+
+:root[data-theme='light'] .fl-card:hover {
+  border-color: var(--green-accent);
+}
+
 :root[data-theme='light'] .fl-card::before {
   background:
     radial-gradient(circle at var(--card-pointer-x) var(--card-pointer-y), rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.02) 12%, transparent 30%),

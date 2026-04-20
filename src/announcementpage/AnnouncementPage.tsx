@@ -21,7 +21,7 @@ const TYPE_OPTIONS: { value: AnnouncementType; label: string; icon: string }[] =
 const TARGET_OPTIONS: { value: AnnouncementTarget; label: string }[] = [
   { value: 'ALL',              label: '전체' },
   { value: 'ROLE_USER',        label: '보호자만' },
-  { value: 'ROLE_FREELANCER',  label: '헬퍼만' },
+  { value: 'ROLE_FREELANCER',  label: '메이트만' },
 ];
 
 const TYPE_LABEL: Record<AnnouncementType, string> = {
@@ -34,7 +34,7 @@ const TYPE_LABEL: Record<AnnouncementType, string> = {
 const TARGET_LABEL: Record<AnnouncementTarget, string> = {
   ALL:             '전체',
   ROLE_USER:       '보호자',
-  ROLE_FREELANCER: '헬퍼',
+  ROLE_FREELANCER: '메이트',
 };
 
 function formatDate(iso: string) {
