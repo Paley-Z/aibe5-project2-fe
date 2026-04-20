@@ -37,7 +37,9 @@
           프로젝트를 등록하고, 검증된 메이트를 직접 탐색해 제안해보세요.
         </p>
         <div class="button-group">
-          <button class="btn-primary">프로젝트 등록하기</button>
+          <button class="btn-primary" onclick={() => window.location.href = '/ai-match'}>
+            프로젝트 등록하기
+          </button>
           <button class="btn-secondary">메이트 둘러보기</button>
         </div>
       </div>
