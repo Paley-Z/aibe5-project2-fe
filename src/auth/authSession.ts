@@ -99,6 +99,14 @@ export async function loginSession(email: string, password: string): Promise<Use
   return updateCurrentUser(normalizeUser(profile));
 }
 
+export async function kakaoLoginSession(request: authApi.KakaoLoginRequest): Promise<User> {
+  const response = await authApi.kakaoLogin(request);
+  setTokens(response.accessToken, response.refreshToken);
+  const profile = await getMyProfile();
+  bootstrapped = true;
+  return updateCurrentUser(normalizeUser(profile));
+}
+
 export async function signupSession(request: authApi.AuthSignupRequest): Promise<authApi.AuthSignupResponse> {
   return authApi.signup(request);
 }
