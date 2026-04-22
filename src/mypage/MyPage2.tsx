@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './mypage.css';
 import AppHeader from '../components/AppHeader';
 import { bootstrapSession, getUser, setUser, type User } from '../store/appAuth';
@@ -79,6 +79,17 @@ import type { VerifyStatus } from './tabs/verifyTabShared';
 type UserTab = 'account' | 'reviews' | 'reports' | 'certify';
 type AdminTab = 'dashboard' | 'freelancers' | 'projects' | 'verify' | 'reports' | 'usage-report';
 type Tab = UserTab | AdminTab;
+type AdminDataKey = 'dashboard' | 'freelancers' | 'projects' | 'verifications' | 'reviews' | 'reports';
+type AdminLoadErrors = Partial<Record<AdminDataKey, string>>;
+
+const ADMIN_LOAD_ERROR_MESSAGES: Record<AdminDataKey, string> = {
+  dashboard: '관리자 대시보드 정보를 불러오지 못했습니다.',
+  freelancers: '관리자 프리랜서 목록을 불러오지 못했습니다.',
+  projects: '관리자 프로젝트 목록을 불러오지 못했습니다.',
+  verifications: '관리자 인증 목록을 불러오지 못했습니다.',
+  reviews: '관리자 리뷰 목록을 불러오지 못했습니다.',
+  reports: '관리자 신고 목록을 불러오지 못했습니다.',
+};
 
 interface ProfileFormState {
   name: string;
@@ -228,6 +239,80 @@ export default function MyPage2() {
   const [adminReviews, setAdminReviews] = useState<AdminReviewListItemResponse[]>([]);
   const [adminReports, setAdminReports] = useState<AdminReportListItemResponse[]>([]);
   const [selectedAdminReport, setSelectedAdminReport] = useState<AdminReportDetailResponse | null>(null);
+  const [adminLoadErrors, setAdminLoadErrors] = useState<AdminLoadErrors>({});
+
+  const loadAdminData = useCallback(async () => {
+    setAdminLoadErrors({});
+
+    try {
+      setAdminDashboard(await getAdminDashboard());
+    } catch (caughtError) {
+      setAdminDashboard(null);
+      setAdminLoadErrors((current) => ({
+        ...current,
+        dashboard: getErrorMessage(caughtError, ADMIN_LOAD_ERROR_MESSAGES.dashboard),
+      }));
+    }
+
+    const [
+      freelancerResult,
+      projectResult,
+      verificationResult,
+      reviewResult,
+      reportResult,
+    ] = await Promise.allSettled([
+      getAdminFreelancers({ page: 0, size: 50 }),
+      getAdminProjects({ page: 0, size: 50 }),
+      getAdminVerifications({ page: 0, size: 50 }),
+      getAdminReviews({ page: 0, size: 50 }),
+      getAdminReports({ page: 0, size: 50 }),
+    ]);
+
+    const nextAdminLoadErrors: AdminLoadErrors = {};
+
+    if (freelancerResult.status === 'fulfilled') {
+      setAdminFreelancers(freelancerResult.value.content);
+    } else {
+      setAdminFreelancers([]);
+      nextAdminLoadErrors.freelancers = getErrorMessage(freelancerResult.reason, ADMIN_LOAD_ERROR_MESSAGES.freelancers);
+    }
+
+    if (projectResult.status === 'fulfilled') {
+      setAdminProjects(projectResult.value.content);
+    } else {
+      setAdminProjects([]);
+      nextAdminLoadErrors.projects = getErrorMessage(projectResult.reason, ADMIN_LOAD_ERROR_MESSAGES.projects);
+    }
+
+    if (verificationResult.status === 'fulfilled') {
+      setAdminVerifications(verificationResult.value.content);
+    } else {
+      setAdminVerifications([]);
+      nextAdminLoadErrors.verifications = getErrorMessage(
+        verificationResult.reason,
+        ADMIN_LOAD_ERROR_MESSAGES.verifications,
+      );
+    }
+
+    if (reviewResult.status === 'fulfilled') {
+      setAdminReviews(reviewResult.value.content);
+    } else {
+      setAdminReviews([]);
+      nextAdminLoadErrors.reviews = getErrorMessage(reviewResult.reason, ADMIN_LOAD_ERROR_MESSAGES.reviews);
+    }
+
+    if (reportResult.status === 'fulfilled') {
+      setAdminReports(reportResult.value.content);
+    } else {
+      setAdminReports([]);
+      nextAdminLoadErrors.reports = getErrorMessage(reportResult.reason, ADMIN_LOAD_ERROR_MESSAGES.reports);
+    }
+
+    setAdminLoadErrors((current) => ({
+      ...current,
+      ...nextAdminLoadErrors,
+    }));
+  }, []);
 
   useEffect(() => {
     const nextUser = getUser();
@@ -279,6 +364,7 @@ export default function MyPage2() {
         setRegionMap(new Map(regions.map((item) => [item.code, item.name])));
         setTimeSlotMap(new Map(timeSlots.map((item) => [item.code, item.name])));
 
+        const myPageResponse = await getMyPage();
         const isUser = user.role === 'ROLE_USER';
         const [myPageResponse, reviewPage, reportPage] = await Promise.all([
           getMyPage(),
@@ -287,13 +373,29 @@ export default function MyPage2() {
         ]);
 
         setSummary(myPageResponse);
-        setReviews(reviewPage.content);
-        setReports(reportPage.content);
         setProfileForm({
           name: myPageResponse.user.name,
           phone: myPageResponse.user.phone ?? '',
           intro: myPageResponse.user.intro ?? '',
         });
+
+        if (user.role === 'ROLE_USER') {
+          const [reviewPage, reportPage] = await Promise.all([
+            getMyReviews({ page: 0, size: 100 }),
+            getMyReports({ page: 0, size: 100 }),
+          ]);
+
+          setReviews(reviewPage.content);
+          setReports(reportPage.content);
+        } else if (user.role === 'ROLE_FREELANCER') {
+          const reportPage = await getMyReports({ page: 0, size: 100 });
+
+          setReviews([]);
+          setReports(reportPage.content);
+        } else {
+          setReviews([]);
+          setReports([]);
+        }
 
         if (user.role === 'ROLE_FREELANCER') {
           try {
@@ -321,28 +423,7 @@ export default function MyPage2() {
         }
 
         if (user.role === 'ROLE_ADMIN') {
-          const [
-            dashboard,
-            freelancerPage,
-            projectPage,
-            verificationPage,
-            reviewPageAdmin,
-            reportPageAdmin,
-          ] = await Promise.all([
-            getAdminDashboard(),
-            getAdminFreelancers({ page: 0, size: 50 }),
-            getAdminProjects({ page: 0, size: 50 }),
-            getAdminVerifications({ page: 0, size: 50 }),
-            getAdminReviews({ page: 0, size: 50 }),
-            getAdminReports({ page: 0, size: 50 }),
-          ]);
-
-          setAdminDashboard(dashboard);
-          setAdminFreelancers(freelancerPage.content);
-          setAdminProjects(projectPage.content);
-          setAdminVerifications(verificationPage.content);
-          setAdminReviews(reviewPageAdmin.content);
-          setAdminReports(reportPageAdmin.content);
+          await loadAdminData();
         }
       } catch (caughtError) {
         setError(getErrorMessage(caughtError, '마이페이지 데이터를 불러오지 못했습니다.'));
@@ -352,9 +433,10 @@ export default function MyPage2() {
     };
 
     void initialize();
-  }, [user]);
+  }, [loadAdminData, user]);
 
   async function refreshProfileSummary() {
+    const myPageResponse = await getMyPage();
     const isUser = user?.role === 'ROLE_USER';
     const [myPageResponse, reviewPage, reportPage] = await Promise.all([
       getMyPage(),
@@ -363,8 +445,28 @@ export default function MyPage2() {
     ]);
 
     setSummary(myPageResponse);
-    setReviews(reviewPage.content);
-    setReports(reportPage.content);
+
+    if (user?.role === 'ROLE_USER') {
+      const [reviewPage, reportPage] = await Promise.all([
+        getMyReviews({ page: 0, size: 100 }),
+        getMyReports({ page: 0, size: 100 }),
+      ]);
+
+      setReviews(reviewPage.content);
+      setReports(reportPage.content);
+      return;
+    }
+
+    if (user?.role === 'ROLE_FREELANCER') {
+      const reportPage = await getMyReports({ page: 0, size: 100 });
+
+      setReviews([]);
+      setReports(reportPage.content);
+      return;
+    }
+
+    setReviews([]);
+    setReports([]);
   }
 
   async function refreshFreelancerWorkspace() {
@@ -394,28 +496,7 @@ export default function MyPage2() {
       return;
     }
 
-    const [
-      dashboard,
-      freelancerPage,
-      projectPage,
-      verificationPage,
-      reviewPageAdmin,
-      reportPageAdmin,
-    ] = await Promise.all([
-      getAdminDashboard(),
-      getAdminFreelancers({ page: 0, size: 50 }),
-      getAdminProjects({ page: 0, size: 50 }),
-      getAdminVerifications({ page: 0, size: 50 }),
-      getAdminReviews({ page: 0, size: 50 }),
-      getAdminReports({ page: 0, size: 50 }),
-    ]);
-
-    setAdminDashboard(dashboard);
-    setAdminFreelancers(freelancerPage.content);
-    setAdminProjects(projectPage.content);
-    setAdminVerifications(verificationPage.content);
-    setAdminReviews(reviewPageAdmin.content);
-    setAdminReports(reportPageAdmin.content);
+    await loadAdminData();
   }
 
   function handleTabChange(tab: Tab) {
@@ -958,6 +1039,16 @@ export default function MyPage2() {
 
   const isAdmin = user.role === 'ROLE_ADMIN';
   const isFreelancer = user.role === 'ROLE_FREELANCER';
+  const adminReportLoadErrors = [adminLoadErrors.reviews, adminLoadErrors.reports].filter(
+    (message): message is string => Boolean(message),
+  );
+  const usageReportLoadErrors = [
+    adminLoadErrors.dashboard,
+    adminLoadErrors.freelancers,
+    adminLoadErrors.projects,
+    adminLoadErrors.reviews,
+    adminLoadErrors.reports,
+  ].filter((message): message is string => Boolean(message));
 
   return (
     <div className="mypage">
@@ -1382,43 +1473,51 @@ export default function MyPage2() {
           </div>
         )}
 
-        {activeTab === 'dashboard' && isAdmin && adminDashboard && (
+        {activeTab === 'dashboard' && isAdmin && (
           <div className="tab-content">
-            <div className="admin-grid">
-              <div className="metric-card">
-                <span className="metric-label">전체 사용자</span>
-                <strong className="metric-value">{adminDashboard.totalUsers}</strong>
-              </div>
-              <div className="metric-card">
-                <span className="metric-label">프리랜서</span>
-                <strong className="metric-value">{adminDashboard.totalFreelancers}</strong>
-              </div>
-              <div className="metric-card">
-                <span className="metric-label">대기 검증</span>
-                <strong className="metric-value">{adminDashboard.pendingVerifications}</strong>
-              </div>
-              <div className="metric-card">
-                <span className="metric-label">미처리 신고</span>
-                <strong className="metric-value">{adminDashboard.pendingReports}</strong>
-              </div>
-            </div>
-
-            <div className="admin-list" style={{ marginTop: '1.5rem' }}>
-              {adminDashboard.recentProjects.map((project) => (
-                <div key={project.projectId} className="admin-item">
-                  <div>
-                    <strong>{project.title}</strong>
-                    <p className="admin-subtext">작성자 {project.ownerName}</p>
+            {adminLoadErrors.dashboard && <p className="login-error">{adminLoadErrors.dashboard}</p>}
+            {adminDashboard ? (
+              <>
+                <div className="admin-grid">
+                  <div className="metric-card">
+                    <span className="metric-label">전체 사용자</span>
+                    <strong className="metric-value">{adminDashboard.totalUsers}</strong>
                   </div>
-                  <span className="admin-subtext">{project.status}</span>
+                  <div className="metric-card">
+                    <span className="metric-label">프리랜서</span>
+                    <strong className="metric-value">{adminDashboard.totalFreelancers}</strong>
+                  </div>
+                  <div className="metric-card">
+                    <span className="metric-label">대기 검증</span>
+                    <strong className="metric-value">{adminDashboard.pendingVerifications}</strong>
+                  </div>
+                  <div className="metric-card">
+                    <span className="metric-label">미처리 신고</span>
+                    <strong className="metric-value">{adminDashboard.pendingReports}</strong>
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="admin-list" style={{ marginTop: '1.5rem' }}>
+                  {adminDashboard.recentProjects.map((project) => (
+                    <div key={project.projectId} className="admin-item">
+                      <div>
+                        <strong>{project.title}</strong>
+                        <p className="admin-subtext">작성자 {project.ownerName}</p>
+                      </div>
+                      <span className="admin-subtext">{project.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              !adminLoadErrors.dashboard && <p className="empty-msg">관리자 대시보드에 표시할 데이터가 없습니다.</p>
+            )}
           </div>
         )}
 
         {activeTab === 'freelancers' && isAdmin && (
           <div className="tab-content">
+            {adminLoadErrors.freelancers && <p className="login-error">{adminLoadErrors.freelancers}</p>}
             <ul className="admin-list">
               {adminFreelancers.map((freelancer) => (
                 <li key={freelancer.freelancerProfileId} className="admin-item">
@@ -1459,6 +1558,7 @@ export default function MyPage2() {
 
         {activeTab === 'projects' && isAdmin && (
           <div className="tab-content">
+            {adminLoadErrors.projects && <p className="login-error">{adminLoadErrors.projects}</p>}
             <ul className="admin-list">
               {adminProjects.map((project) => (
                 <li key={project.projectId} className="admin-item">
@@ -1494,38 +1594,51 @@ export default function MyPage2() {
         )}
 
         {activeTab === 'verify' && isAdmin && (
-          <VerifyTab
-            verifications={adminVerifications}
-            verifyFilter={verifyFilter}
-            setVerifyFilter={setVerifyFilter}
-            selectedVerification={selectedAdminVerification}
-            onSelectVerification={(verificationId) => void handleSelectAdminVerification(verificationId)}
-            onApproveVerification={(verificationId) => void handleApproveVerification(verificationId)}
-            onRejectVerification={(verificationId) => void handleRejectVerification(verificationId)}
-          />
+          <>
+            {adminLoadErrors.verifications && <p className="login-error">{adminLoadErrors.verifications}</p>}
+            <VerifyTab
+              verifications={adminVerifications}
+              verifyFilter={verifyFilter}
+              setVerifyFilter={setVerifyFilter}
+              selectedVerification={selectedAdminVerification}
+              onSelectVerification={(verificationId) => void handleSelectAdminVerification(verificationId)}
+              onApproveVerification={(verificationId) => void handleApproveVerification(verificationId)}
+              onRejectVerification={(verificationId) => void handleRejectVerification(verificationId)}
+            />
+          </>
         )}
 
         {activeTab === 'reports' && isAdmin && (
-          <ReportsTab
-            mode="admin"
-            reviews={adminReviews}
-            reports={adminReports}
-            selectedReport={selectedAdminReport}
-            onBlindToggle={(reviewId, blindedYn) => void handleAdminBlindToggle(reviewId, blindedYn)}
-            onSelectReport={(reportId) => void handleSelectAdminReport(reportId)}
-            onResolveReport={(reportId) => void handleResolveAdminReport(reportId)}
-            onRejectReport={(reportId) => void handleRejectAdminReport(reportId)}
-          />
+          <>
+            {adminReportLoadErrors.map((message) => (
+              <p key={message} className="login-error">{message}</p>
+            ))}
+            <ReportsTab
+              mode="admin"
+              reviews={adminReviews}
+              reports={adminReports}
+              selectedReport={selectedAdminReport}
+              onBlindToggle={(reviewId, blindedYn) => void handleAdminBlindToggle(reviewId, blindedYn)}
+              onSelectReport={(reportId) => void handleSelectAdminReport(reportId)}
+              onResolveReport={(reportId) => void handleResolveAdminReport(reportId)}
+              onRejectReport={(reportId) => void handleRejectAdminReport(reportId)}
+            />
+          </>
         )}
 
         {activeTab === 'usage-report' && isAdmin && (
-          <UsageReportTab
-            dashboard={adminDashboard}
-            freelancers={adminFreelancers}
-            projects={adminProjects}
-            reviews={adminReviews}
-            reports={adminReports}
-          />
+          <>
+            {usageReportLoadErrors.map((message) => (
+              <p key={message} className="login-error">{message}</p>
+            ))}
+            <UsageReportTab
+              dashboard={adminDashboard}
+              freelancers={adminFreelancers}
+              projects={adminProjects}
+              reviews={adminReviews}
+              reports={adminReports}
+            />
+          </>
         )}
       </main>
     </div>
