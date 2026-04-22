@@ -365,13 +365,6 @@ export default function MyPage2() {
         setTimeSlotMap(new Map(timeSlots.map((item) => [item.code, item.name])));
 
         const myPageResponse = await getMyPage();
-        const isUser = user.role === 'ROLE_USER';
-        const [myPageResponse, reviewPage, reportPage] = await Promise.all([
-          getMyPage(),
-          isUser ? getMyReviews({ page: 0, size: 100 }) : Promise.resolve({ content: [] as typeof reviews }),
-          getMyReports({ page: 0, size: 100 }),
-        ]);
-
         setSummary(myPageResponse);
         setProfileForm({
           name: myPageResponse.user.name,
@@ -437,13 +430,6 @@ export default function MyPage2() {
 
   async function refreshProfileSummary() {
     const myPageResponse = await getMyPage();
-    const isUser = user?.role === 'ROLE_USER';
-    const [myPageResponse, reviewPage, reportPage] = await Promise.all([
-      getMyPage(),
-      isUser ? getMyReviews({ page: 0, size: 100 }) : Promise.resolve({ content: [] as typeof reviews }),
-      getMyReports({ page: 0, size: 100 }),
-    ]);
-
     setSummary(myPageResponse);
 
     if (user?.role === 'ROLE_USER') {
