@@ -15,6 +15,10 @@ export interface ReviewSummaryResponse {
   freelancerName?: string | null;
   reviewerUserId: number;
   reviewerName?: string | null;
+  reviewDirection?: string | null;
+  revieweeUserId?: number | null;
+  revieweeName?: string | null;
+  revieweeRoleCode?: string | null;
   rating: number;
   tagCodes: string[];
   content: string;
@@ -39,6 +43,13 @@ export interface ReviewDeleteResponse {
 
 export function createProjectReview(projectId: number, request: ReviewCreateRequest): Promise<ReviewDetailResponse> {
   return requestJson<ReviewDetailResponse>(`/api/v1/projects/${projectId}/reviews`, {
+    method: 'POST',
+    body: request,
+  });
+}
+
+export function createRequesterReview(projectId: number, request: ReviewCreateRequest): Promise<ReviewDetailResponse> {
+  return requestJson<ReviewDetailResponse>(`/api/v1/projects/${projectId}/requester-reviews`, {
     method: 'POST',
     body: request,
   });

@@ -651,6 +651,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   color: #e07070;
 }
 
+.proposal-btn--review {
+  background-color: transparent;
+  border: 1px solid var(--green-accent);
+  color: var(--green-accent);
+}
+
 .proposal-status-text {
   font-size: 0.85rem;
   color: var(--text-secondary);

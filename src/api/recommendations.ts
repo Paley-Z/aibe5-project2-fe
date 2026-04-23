@@ -56,6 +56,5 @@ export function recommendFreelancers(
   return requestJson<FreelancerRecommendationResponse>('/api/v1/recommendations/freelancers/public', {
     method: 'POST',
     body: request,
-    auth: false,
   });
 }

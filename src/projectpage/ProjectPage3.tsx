@@ -27,6 +27,7 @@ import {
 } from '../api/proposals';
 import {
   createProjectReview,
+  createRequesterReview,
   getMyReviews,
   getReviewTagCodes,
   updateMyReview,
@@ -139,6 +140,8 @@ export default function ProjectPage3() {
   const [createError, setCreateError] = useState('');
   const [editError, setEditError] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewingProjectId, setReviewingProjectId] = useState<number | null>(null);
+  const [reviewingProjectTitle, setReviewingProjectTitle] = useState('');
   const [form, setForm] = useState<ProjectFormValues>(EMPTY_FORM);
   const [editForm, setEditForm] = useState<ProjectFormValues>(EMPTY_FORM);
   const [reviewForm, setReviewForm] = useState(EMPTY_REVIEW_FORM);
@@ -204,8 +207,16 @@ export default function ProjectPage3() {
             ),
           );
         } else if (user.role === 'ROLE_FREELANCER') {
-          const proposalPage = await getMyFreelancerProposals({ page: 0, size: 50 });
+          const [proposalPage, myReviewPage] = await Promise.all([
+            getMyFreelancerProposals({ page: 0, size: 50 }),
+            getMyReviews({ page: 0, size: 100 }),
+          ]);
           setFreelancerProposals(proposalPage.content);
+          setMyReviews(
+            Object.fromEntries(
+              myReviewPage.content.map((review) => [review.projectId, review]),
+            ),
+          );
         }
       } catch (caughtError) {
         setError(getErrorMessage(caughtError, '프로젝트 데이터를 불러오지 못했습니다.'));
@@ -359,11 +370,20 @@ export default function ProjectPage3() {
     setShowReviewModal(true);
   }
 
+  function openFreelancerReviewModal(projectId: number, projectTitle: string) {
+    const existingSummary = myReviews[projectId];
+    const existingReview: ReviewDetailResponse | null = existingSummary ? { ...existingSummary } : null;
+    setReviewingProjectId(projectId);
+    setReviewingProjectTitle(projectTitle);
+    setSelectedReview(existingReview);
+    setReviewForm(existingReview
+      ? { rating: existingReview.rating, tagCodes: existingReview.tagCodes, content: existingReview.content }
+      : EMPTY_REVIEW_FORM);
+    setShowReviewModal(true);
+  }
+
   async function handleReviewSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedProject) {
-      return;
-    }
 
     setMutationLoading(true);
     setError('');
@@ -371,13 +391,17 @@ export default function ProjectPage3() {
     try {
       if (selectedReview) {
         await updateMyReview(selectedReview.reviewId, reviewForm);
-      } else {
+      } else if (user?.role === 'ROLE_FREELANCER' && reviewingProjectId != null) {
+        await createRequesterReview(reviewingProjectId, reviewForm);
+      } else if (selectedProject) {
         await createProjectReview(selectedProject.projectId, reviewForm);
       }
 
       await refreshMyReviews();
       setShowReviewModal(false);
       setSelectedReview(null);
+      setReviewingProjectId(null);
+      setReviewingProjectTitle('');
       setReviewForm(EMPTY_REVIEW_FORM);
     } catch (caughtError) {
       setError(getErrorMessage(caughtError, '리뷰 저장에 실패했습니다.'));
@@ -521,10 +545,12 @@ export default function ProjectPage3() {
           <ProposalTab
             proposals={freelancerProposals}
             loading={mutationLoading}
+            reviewedProjectIds={new Set(Object.keys(myReviews).map(Number))}
             onAccept={(proposalId) => void handleProposalAccept(proposalId)}
             onReject={(proposalId) => void handleProposalReject(proposalId)}
             onStartProject={(proposalId) => void transitionProposalProject(proposalId, 'start')}
             onCompleteProject={(proposalId) => void transitionProposalProject(proposalId, 'complete')}
+            onWriteReview={(projectId, projectTitle) => openFreelancerReviewModal(projectId, projectTitle)}
           />
         ) : (
           <div className="project-empty">
@@ -657,13 +683,13 @@ export default function ProjectPage3() {
         />
       )}
 
-      {showReviewModal && selectedProject && (
+      {showReviewModal && (selectedProject || reviewingProjectId != null) && (
         <ReviewModal
-          projectTitle={selectedProject.title}
+          projectTitle={selectedProject?.title ?? reviewingProjectTitle}
           selectedReview={selectedReview}
           reviewForm={reviewForm}
           reviewTags={reviewTagOptions}
-          onClose={() => setShowReviewModal(false)}
+          onClose={() => { setShowReviewModal(false); setReviewingProjectId(null); setReviewingProjectTitle(''); }}
           onSubmit={handleReviewSubmit}
           onRatingChange={(rating) => setReviewForm((prev) => ({ ...prev, rating }))}
           onTagToggle={(tagCode) => setReviewForm((prev) => ({

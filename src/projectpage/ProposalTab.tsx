@@ -21,19 +21,23 @@ const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
 interface Props {
   proposals: ProposalSummaryResponse[];
   loading?: boolean;
+  reviewedProjectIds?: Set<number>;
   onAccept: (proposalId: number) => void;
   onReject: (proposalId: number) => void;
   onStartProject: (proposalId: number) => void;
   onCompleteProject: (proposalId: number) => void;
+  onWriteReview?: (projectId: number, projectTitle: string) => void;
 }
 
 export default function ProposalTab({
   proposals,
   loading = false,
+  reviewedProjectIds,
   onAccept,
   onReject,
   onStartProject,
   onCompleteProject,
+  onWriteReview,
 }: Props) {
   return (
     <>
@@ -105,9 +109,20 @@ export default function ProposalTab({
                     {loading ? '처리 중...' : '완료 처리'}
                   </button>
                 )}
+                {proposal.proposalStatus === 'ACCEPTED' && proposal.projectStatus === 'COMPLETED' && onWriteReview && (
+                  <button
+                    type="button"
+                    className="proposal-btn proposal-btn--review"
+                    disabled={loading}
+                    onClick={() => onWriteReview(proposal.projectId, proposal.projectTitle)}
+                  >
+                    {reviewedProjectIds?.has(proposal.projectId) ? '리뷰 수정' : '리뷰 작성'}
+                  </button>
+                )}
                 {(proposal.proposalStatus !== 'PENDING'
                   && !(proposal.proposalStatus === 'ACCEPTED' && proposal.projectStatus === 'ACCEPTED')
-                  && !(proposal.proposalStatus === 'ACCEPTED' && proposal.projectStatus === 'IN_PROGRESS')) && (
+                  && !(proposal.proposalStatus === 'ACCEPTED' && proposal.projectStatus === 'IN_PROGRESS')
+                  && !(proposal.proposalStatus === 'ACCEPTED' && proposal.projectStatus === 'COMPLETED')) && (
                   <span className="proposal-status-text">
                     {PROPOSAL_STATUS_LABEL[proposal.proposalStatus]}
                   </span>

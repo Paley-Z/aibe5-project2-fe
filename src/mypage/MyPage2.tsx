@@ -50,6 +50,7 @@ import {
 import { getMyReports, type ReportSummaryResponse } from '../api/reports';
 import {
   deleteMyReview,
+  getFreelancerReviews,
   getMyReviews,
   getReviewTagCodes,
   updateMyReview,
@@ -204,8 +205,10 @@ export default function MyPage2() {
   const [applyForm, setApplyForm] = useState<FreelancerFormState>(EMPTY_FREELANCER_FORM);
   const [applyFiles, setApplyFiles] = useState<File[]>([]);
   const [showMateApplyForm, setShowMateApplyForm] = useState(false);
+  const [showFreelancerProfileForm, setShowFreelancerProfileForm] = useState(false);
   const [summary, setSummary] = useState<UserMyPageResponse | null>(null);
   const [reviews, setReviews] = useState<ReviewSummaryResponse[]>([]);
+  const [receivedReviews, setReceivedReviews] = useState<ReviewSummaryResponse[]>([]);
   const [reports, setReports] = useState<ReportSummaryResponse[]>([]);
   const [reviewTags, setReviewTags] = useState<ReviewTagCodeResponse[]>([]);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
@@ -382,9 +385,12 @@ export default function MyPage2() {
           setReviews(reviewPage.content);
           setReports(reportPage.content);
         } else if (user.role === 'ROLE_FREELANCER') {
-          const reportPage = await getMyReports({ page: 0, size: 100 });
+          const [reviewPage, reportPage] = await Promise.all([
+            getMyReviews({ page: 0, size: 100 }),
+            getMyReports({ page: 0, size: 100 }),
+          ]);
 
-          setReviews([]);
+          setReviews(reviewPage.content);
           setReports(reportPage.content);
         } else {
           setReviews([]);
@@ -397,13 +403,15 @@ export default function MyPage2() {
             setFreelancerProfile(profile);
             setFreelancerForm(toFreelancerForm(profile));
 
-            const [files, myVerifications] = await Promise.all([
+            const [files, myVerifications, receivedPage] = await Promise.all([
               getMyFreelancerFiles(),
               getMyVerifications(),
+              getFreelancerReviews(profile.freelancerProfileId, { page: 0, size: 100 }),
             ]);
 
             setPortfolioFiles(files);
             setVerifications(myVerifications);
+            setReceivedReviews(receivedPage.content);
           } catch (caughtError) {
             const message = getErrorMessage(caughtError, '');
             if (!message.includes('404')) {
@@ -444,11 +452,16 @@ export default function MyPage2() {
       return;
     }
 
-    if (user?.role === 'ROLE_FREELANCER') {
-      const reportPage = await getMyReports({ page: 0, size: 100 });
+    if (user?.role === 'ROLE_FREELANCER' && freelancerProfile) {
+      const [reviewPage, reportPage, receivedPage] = await Promise.all([
+        getMyReviews({ page: 0, size: 100 }),
+        getMyReports({ page: 0, size: 100 }),
+        getFreelancerReviews(freelancerProfile.freelancerProfileId, { page: 0, size: 100 }),
+      ]);
 
-      setReviews([]);
+      setReviews(reviewPage.content);
       setReports(reportPage.content);
+      setReceivedReviews(receivedPage.content);
       return;
     }
 
@@ -1300,10 +1313,21 @@ export default function MyPage2() {
               <div className="account-card" style={{ marginTop: '1.5rem' }}>
                 <div className="account-card-head">
                   <h2>프리랜서 프로필</h2>
-                  <button className="btn-edit" onClick={() => void handleFreelancerProfileSave()} disabled={saving}>저장</button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {showFreelancerProfileForm && (
+                      <button className="btn-edit" onClick={() => void handleFreelancerProfileSave()} disabled={saving}>저장</button>
+                    )}
+                    <button
+                      type="button"
+                      className={showFreelancerProfileForm ? 'btn-cancel' : 'btn-edit'}
+                      onClick={() => setShowFreelancerProfileForm((v) => !v)}
+                    >
+                      {showFreelancerProfileForm ? '접기' : '편집'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="account-edit-form">
+                {showFreelancerProfileForm && <div className="account-edit-form">
                   <div className="account-field">
                     <label>경력 설명</label>
                     <textarea
@@ -1325,17 +1349,18 @@ export default function MyPage2() {
                     </div>
                   </div>
                   <div className="account-field">
-                    <label>활동 지역</label>
+                    <label>활동 지역 (최대 5개 선택)</label>
                     <div className="type-selector">
-                      {regionOptions.map((option) => (
+                      {sortSido(regionOptions.filter((o) => o.regionLevel === 1)).map((option) => (
                         <button
                           key={option.code}
                           type="button"
                           className={`type-btn${freelancerForm.activityRegionCodes.includes(option.code) ? ' selected' : ''}`}
-                          onClick={() => setFreelancerForm((current) => ({
-                            ...current,
-                            activityRegionCodes: toggleSelection(current.activityRegionCodes, option.code),
-                          }))}
+                          onClick={() => setFreelancerForm((current) => {
+                            const already = current.activityRegionCodes.includes(option.code);
+                            if (!already && current.activityRegionCodes.length >= 5) return current;
+                            return { ...current, activityRegionCodes: toggleSelection(current.activityRegionCodes, option.code) };
+                          })}
                         >
                           {option.name}
                         </button>
@@ -1378,7 +1403,7 @@ export default function MyPage2() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
           </div>
@@ -1387,6 +1412,7 @@ export default function MyPage2() {
         {activeTab === 'reviews' && !isAdmin && (
           <ReviewsTab
             reviews={reviews}
+            receivedReviews={receivedReviews}
             editingReviewId={editingReviewId}
             editRating={editRating}
             editTagCodes={editTagCodes}

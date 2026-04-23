@@ -219,7 +219,7 @@ export default function FreelancerDetailPage2() {
       <AppHeader activePage="freelancers" />
 
       <main className="fd-content">
-        <button className="fd-back" onClick={() => history.back()}>목록으로</button>
+        <button type="button" className="fd-back" onClick={() => history.back()}>목록으로</button>
         {error && <p className="fd-empty">{error}</p>}
 
         <section className="fd-profile-section">
@@ -256,7 +256,7 @@ export default function FreelancerDetailPage2() {
 
             {user?.role === 'ROLE_USER' && (
               <div className="fd-action-row">
-                <button className="fd-propose-btn" onClick={() => setProposing(true)}>프로젝트 제안하기</button>
+                <button type="button" className="fd-propose-btn" onClick={() => setProposing(true)}>프로젝트 제안하기</button>
               </div>
             )}
           </div>
@@ -313,6 +313,7 @@ export default function FreelancerDetailPage2() {
                   </div>
                   {canReportReview(user, { reviewerUserId: review.reviewerUserId }) && (
                     <button
+                      type="button"
                       className="fd-report-btn"
                       onClick={() => {
                         setReportingReviewId(review.reviewId);
@@ -333,7 +334,7 @@ export default function FreelancerDetailPage2() {
       {reportingReviewId !== null && (
         <div className="fd-modal-overlay" onClick={() => setReportingReviewId(null)}>
           <div className="fd-modal" onClick={(event) => event.stopPropagation()}>
-            <button className="fd-modal-close" onClick={() => setReportingReviewId(null)}>닫기</button>
+            <button type="button" className="fd-modal-close" onClick={() => setReportingReviewId(null)}>닫기</button>
             <h3 className="fd-modal-title">리뷰 신고</h3>
             <div className="fd-report-form">
               <label className="fd-report-label">신고 유형</label>
@@ -357,7 +358,7 @@ export default function FreelancerDetailPage2() {
                 onChange={(event) => setReportReasonDetail(event.target.value)}
               />
             </div>
-            <button className="fd-report-submit" onClick={() => void handleReviewReport()} disabled={submitting}>
+            <button type="button" className="fd-report-submit" onClick={() => void handleReviewReport()} disabled={submitting}>
               신고 접수
             </button>
           </div>
@@ -367,7 +368,7 @@ export default function FreelancerDetailPage2() {
       {proposing && (
         <div className="fd-modal-overlay" onClick={() => setProposing(false)}>
           <div className="fd-modal" onClick={(event) => event.stopPropagation()}>
-            <button className="fd-modal-close" onClick={() => setProposing(false)}>닫기</button>
+            <button type="button" className="fd-modal-close" onClick={() => setProposing(false)}>닫기</button>
             <h3 className="fd-modal-title">{freelancer.name}님에게 제안할 프로젝트</h3>
             {projectsLoading ? (
               <p className="fd-empty">제안 가능한 프로젝트를 불러오는 중입니다.</p>
@@ -399,6 +400,7 @@ export default function FreelancerDetailPage2() {
                   onChange={(event) => setProposalMessage(event.target.value)}
                 />
                 <button
+                  type="button"
                   className="fd-propose-btn"
                   disabled={!selectedProjectId || submitting}
                   onClick={() => void handleSendProposal()}

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { ReviewSummaryResponse, ReviewTagCodeResponse } from '../../api/reviews';
 import { formatDateTime } from '../../lib/referenceData';
 
 interface Props {
   reviews: ReviewSummaryResponse[];
+  receivedReviews: ReviewSummaryResponse[];
   editingReviewId: number | null;
   editRating: number;
   editTagCodes: string[];
@@ -18,8 +20,102 @@ interface Props {
   startEditReview: (review: ReviewSummaryResponse) => void;
 }
 
+function ReviewCard({
+  review,
+  editable,
+  editingReviewId,
+  editRating,
+  editTagCodes,
+  editContent,
+  reviewTags,
+  setEditingReviewId,
+  setEditRating,
+  setEditContent,
+  handleEditTagToggle,
+  handleReviewUpdate,
+  handleReviewDelete,
+  startEditReview,
+}: {
+  review: ReviewSummaryResponse;
+  editable: boolean;
+} & Omit<Props, 'reviews' | 'receivedReviews' | 'canEdit'>) {
+  return (
+    <li className="review-item">
+      <div className="review-header">
+        <div>
+          <span className="review-service">
+            {review.revieweeName || review.freelancerName || review.projectTitle}
+          </span>
+          {review.reviewDirection && (
+            <span className="review-direction-badge">
+              {review.reviewDirection === 'USER_TO_FREELANCER' ? '보호자 → 메이트' : '메이트 → 보호자'}
+            </span>
+          )}
+          <div className="review-stars">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
+        </div>
+        <span className="review-date">{formatDateTime(review.createdAt)}</span>
+      </div>
+      <div className="review-tag-row">
+        {review.tagCodes.map((tagCode) => <span key={tagCode} className="skill-tag">{tagCode}</span>)}
+      </div>
+      {editable && editingReviewId === review.reviewId ? (
+        <div className="review-editor">
+          <div className="review-rating-row">
+            {[1, 2, 3, 4, 5].map((score) => (
+              <button
+                key={score}
+                type="button"
+                className={`review-rating-btn${editRating === score ? ' selected' : ''}`}
+                onClick={() => setEditRating(score)}
+              >
+                {score}점
+              </button>
+            ))}
+          </div>
+          <div className="type-selector">
+            {reviewTags.map((tag) => (
+              <button
+                key={tag.code}
+                type="button"
+                className={`type-btn${editTagCodes.includes(tag.code) ? ' selected' : ''}`}
+                onClick={() => handleEditTagToggle(tag.code)}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="bio-textarea"
+            value={editContent}
+            onChange={(event) => setEditContent(event.target.value)}
+            rows={4}
+          />
+          <div className="bio-actions">
+            <button className="btn-edit" onClick={() => handleReviewUpdate(review.reviewId)}>저장</button>
+            <button className="btn-cancel" onClick={() => setEditingReviewId(null)}>취소</button>
+          </div>
+        </div>
+      ) : (
+        <p className="review-content">{review.blindedYn ? '블라인드 처리된 리뷰입니다.' : review.content}</p>
+      )}
+      <div className="review-actions-row">
+        {editable && (
+          <>
+            <button className="btn-edit" onClick={() => startEditReview(review)}>수정</button>
+            <button className="btn-cancel" onClick={() => handleReviewDelete(review.reviewId)}>삭제</button>
+          </>
+        )}
+        <span className="review-state-text">
+          {review.blindedYn ? '블라인드' : review.reported ? '신고 접수됨' : '정상 노출'}
+        </span>
+      </div>
+    </li>
+  );
+}
+
 export default function ReviewsTab({
   reviews,
+  receivedReviews,
   editingReviewId,
   editRating,
   editTagCodes,
@@ -34,76 +130,59 @@ export default function ReviewsTab({
   handleReviewDelete,
   startEditReview,
 }: Props) {
+  const hasReceived = receivedReviews.length > 0;
+  const [direction, setDirection] = useState<'sent' | 'received'>('sent');
+
+  const sharedCardProps = {
+    editingReviewId,
+    editRating,
+    editTagCodes,
+    editContent,
+    reviewTags,
+    setEditingReviewId,
+    setEditRating,
+    setEditContent,
+    handleEditTagToggle,
+    handleReviewUpdate,
+    handleReviewDelete,
+    startEditReview,
+  };
+
+  const activeList = direction === 'sent' ? reviews : receivedReviews;
+
   return (
     <div className="tab-content">
-      {reviews.length === 0 ? (
-        <p className="empty-msg">작성한 리뷰가 없습니다.</p>
+      <div className="review-direction-tabs">
+        <button
+          type="button"
+          className={`review-dir-tab${direction === 'sent' ? ' active' : ''}`}
+          onClick={() => setDirection('sent')}
+        >
+          보낸 리뷰 <span className="review-dir-count">{reviews.length}</span>
+        </button>
+        <button
+          type="button"
+          className={`review-dir-tab${direction === 'received' ? ' active' : ''}`}
+          onClick={() => setDirection('received')}
+        >
+          받은 리뷰 <span className="review-dir-count">{receivedReviews.length}</span>
+        </button>
+      </div>
+
+      {activeList.length === 0 ? (
+        <p className="empty-msg">
+          {direction === 'sent' ? '작성한 리뷰가 없습니다.' : '받은 리뷰가 없습니다.'}
+          {direction === 'received' && !hasReceived && receivedReviews.length === 0 && reviews.length === 0 && null}
+        </p>
       ) : (
         <ul className="review-list">
-          {reviews.map((review) => (
-            <li key={review.reviewId} className="review-item">
-              <div className="review-header">
-                <div>
-                  <span className="review-service">{review.freelancerName || review.projectTitle}</span>
-                  <div className="review-stars">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
-                </div>
-                <span className="review-date">{formatDateTime(review.createdAt)}</span>
-              </div>
-              <div className="review-tag-row">
-                {review.tagCodes.map((tagCode) => <span key={tagCode} className="skill-tag">{tagCode}</span>)}
-              </div>
-              {canEdit && editingReviewId === review.reviewId ? (
-                <div className="review-editor">
-                  <div className="review-rating-row">
-                    {[1, 2, 3, 4, 5].map((score) => (
-                      <button
-                        key={score}
-                        type="button"
-                        className={`review-rating-btn${editRating === score ? ' selected' : ''}`}
-                        onClick={() => setEditRating(score)}
-                      >
-                        {score}점
-                      </button>
-                    ))}
-                  </div>
-                  <div className="type-selector">
-                    {reviewTags.map((tag) => (
-                      <button
-                        key={tag.code}
-                        type="button"
-                        className={`type-btn${editTagCodes.includes(tag.code) ? ' selected' : ''}`}
-                        onClick={() => handleEditTagToggle(tag.code)}
-                      >
-                        {tag.name}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    className="bio-textarea"
-                    value={editContent}
-                    onChange={(event) => setEditContent(event.target.value)}
-                    rows={4}
-                  />
-                  <div className="bio-actions">
-                    <button className="btn-edit" onClick={() => handleReviewUpdate(review.reviewId)}>저장</button>
-                    <button className="btn-cancel" onClick={() => setEditingReviewId(null)}>취소</button>
-                  </div>
-                </div>
-              ) : (
-                <p className="review-content">{review.blindedYn ? '블라인드 처리된 리뷰입니다.' : review.content}</p>
-              )}
-              <div className="review-actions-row">
-                {canEdit && (
-                  <>
-                    <button className="btn-edit" onClick={() => startEditReview(review)}>수정</button>
-                    <button className="btn-cancel" onClick={() => handleReviewDelete(review.reviewId)}>삭제</button>
-                  </>
-                )}
-                <span className="review-state-text">
-                  {review.blindedYn ? '블라인드' : review.reported ? '신고 접수됨' : '정상 노출'}
-                </span>
-              </div>
-            </li>
+          {activeList.map((review) => (
+            <ReviewCard
+              key={review.reviewId}
+              review={review}
+              editable={direction === 'sent' && canEdit}
+              {...sharedCardProps}
+            />
           ))}
         </ul>
       )}
