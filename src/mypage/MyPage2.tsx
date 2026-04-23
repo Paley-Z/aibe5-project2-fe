@@ -45,7 +45,6 @@ import {
   uploadMyFreelancerFile,
   type FreelancerDetailResponse,
   type FreelancerFileResponse,
-  type FreelancerProfileUpsertRequest,
 } from '../api/freelancers';
 import { getMyReports, type ReportSummaryResponse } from '../api/reports';
 import {
@@ -70,128 +69,28 @@ import {
 } from '../api/verifications';
 import { getMyPage, updateMyProfile, type UserMyPageResponse } from '../api/users';
 import { getErrorMessage } from '../lib/errors';
-import { formatDateTime, labelOf, sortSido } from '../lib/referenceData';
+import { formatDateTime, labelOf } from '../lib/referenceData';
 import VerifyTab from './tabs/VerifyTab';
 import ReviewsTab from './tabs/ReviewsTab';
 import ReportsTab from './tabs/ReportsTab';
 import UsageReportTab from './tabs/UsageReportTab';
 import type { VerifyStatus } from './tabs/verifyTabShared';
-
-type UserTab = 'account' | 'reviews' | 'reports' | 'certify';
-type AdminTab = 'dashboard' | 'freelancers' | 'projects' | 'verify' | 'reports' | 'usage-report';
-type Tab = UserTab | AdminTab;
-type AdminDataKey = 'dashboard' | 'freelancers' | 'projects' | 'verifications' | 'reviews' | 'reports';
-type AdminLoadErrors = Partial<Record<AdminDataKey, string>>;
-
-const ADMIN_LOAD_ERROR_MESSAGES: Record<AdminDataKey, string> = {
-  dashboard: '관리자 대시보드 정보를 불러오지 못했습니다.',
-  freelancers: '관리자 프리랜서 목록을 불러오지 못했습니다.',
-  projects: '관리자 프로젝트 목록을 불러오지 못했습니다.',
-  verifications: '관리자 인증 목록을 불러오지 못했습니다.',
-  reviews: '관리자 리뷰 목록을 불러오지 못했습니다.',
-  reports: '관리자 신고 목록을 불러오지 못했습니다.',
-};
-
-interface ProfileFormState {
-  name: string;
-  phone: string;
-  intro: string;
-}
-
-interface FreelancerFormState {
-  careerDescription: string;
-  caregiverYn: boolean;
-  publicYn: boolean;
-  activityRegionCodes: string[];
-  availableTimeSlotCodes: string[];
-  projectTypeCodes: string[];
-}
-
-const EMPTY_PROFILE_FORM: ProfileFormState = {
-  name: '',
-  phone: '',
-  intro: '',
-};
-
-const EMPTY_FREELANCER_FORM: FreelancerFormState = {
-  careerDescription: '',
-  caregiverYn: false,
-  publicYn: true,
-  activityRegionCodes: [],
-  availableTimeSlotCodes: [],
-  projectTypeCodes: [],
-};
-
-const EMPTY_REVIEW_EDITOR = {
-  rating: 5,
-  tagCodes: [] as string[],
-  content: '',
-};
-
-function readRequestedTab(): string | null {
-  return new URLSearchParams(window.location.search).get('tab');
-}
-
-function updateTabQuery(tab: Tab): void {
-  const url = new URL(window.location.href);
-  url.searchParams.set('tab', tab);
-  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-}
-
-function toFreelancerForm(profile: FreelancerDetailResponse | null): FreelancerFormState {
-  if (!profile) {
-    return EMPTY_FREELANCER_FORM;
-  }
-
-  return {
-    careerDescription: profile.careerDescription ?? '',
-    caregiverYn: profile.caregiverYn,
-    publicYn: profile.publicYn,
-    activityRegionCodes: profile.activityRegionCodes,
-    availableTimeSlotCodes: profile.availableTimeSlotCodes,
-    projectTypeCodes: profile.projectTypeCodes,
-  };
-}
-
-function toFreelancerRequest(form: FreelancerFormState): FreelancerProfileUpsertRequest {
-  return {
-    careerDescription: form.careerDescription.trim() || undefined,
-    caregiverYn: form.caregiverYn,
-    publicYn: form.publicYn,
-    activityRegionCodes: form.activityRegionCodes,
-    availableTimeSlotCodes: form.availableTimeSlotCodes,
-    projectTypeCodes: form.projectTypeCodes,
-  };
-}
-
-function toggleSelection(values: string[], code: string): string[] {
-  return values.includes(code)
-    ? values.filter((value) => value !== code)
-    : [...values, code];
-}
-
-function resolveRequestedTab(user: User | null): Tab {
-  const requestedTab = readRequestedTab();
-
-  if (!user) {
-    return 'account';
-  }
-
-  if (user.role === 'ROLE_ADMIN') {
-    const adminTabs: AdminTab[] = ['dashboard', 'freelancers', 'projects', 'verify', 'reports', 'usage-report'];
-    return requestedTab && adminTabs.includes(requestedTab as AdminTab)
-      ? (requestedTab as AdminTab)
-      : 'dashboard';
-  }
-
-  const userTabs: UserTab[] = user.role === 'ROLE_FREELANCER'
-    ? ['account', 'reviews', 'reports', 'certify']
-    : ['account', 'reviews', 'reports'];
-
-  return requestedTab && userTabs.includes(requestedTab as UserTab)
-    ? (requestedTab as UserTab)
-    : 'account';
-}
+import AccountTabContent from './components/AccountTabContent';
+import {
+  ADMIN_LOAD_ERROR_MESSAGES,
+  EMPTY_FREELANCER_FORM,
+  EMPTY_PROFILE_FORM,
+  EMPTY_REVIEW_EDITOR,
+  resolveRequestedTab,
+  toggleSelection,
+  toFreelancerForm,
+  toFreelancerRequest,
+  updateTabQuery,
+  type AdminLoadErrors,
+  type FreelancerFormState,
+  type ProfileFormState,
+  type Tab,
+} from './myPageShared';
 
 export default function MyPage2() {
   const [user, setCurrentUser] = useState<User | null>(null);
@@ -222,8 +121,6 @@ export default function MyPage2() {
   const [projectTypeMap, setProjectTypeMap] = useState<Map<string, string>>(new Map());
   const [regionMap, setRegionMap] = useState<Map<string, string>>(new Map());
   const [timeSlotMap, setTimeSlotMap] = useState<Map<string, string>>(new Map());
-  const [expandedApplyRegionCode, setExpandedApplyRegionCode] = useState<string>('');
-  const [expandedFreelancerRegionCode, setExpandedFreelancerRegionCode] = useState<string>('');
 
   const [freelancerProfile, setFreelancerProfile] = useState<FreelancerDetailResponse | null>(null);
   const [portfolioFiles, setPortfolioFiles] = useState<FreelancerFileResponse[]>([]);
@@ -246,27 +143,6 @@ export default function MyPage2() {
   const [adminReports, setAdminReports] = useState<AdminReportListItemResponse[]>([]);
   const [selectedAdminReport, setSelectedAdminReport] = useState<AdminReportDetailResponse | null>(null);
   const [adminLoadErrors, setAdminLoadErrors] = useState<AdminLoadErrors>({});
-
-  const sidoRegionOptions = sortSido(regionOptions.filter((option) => option.regionLevel === 1 || !option.parentRegionCode));
-
-  function getSubRegionOptions(parentRegionCode: string): CodeLookupResponse[] {
-    return regionOptions
-      .filter((option) => option.parentRegionCode === parentRegionCode)
-      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-  }
-
-  function hasSelectedSubRegion(selectedCodes: string[], parentRegionCode: string): boolean {
-    return getSubRegionOptions(parentRegionCode).some((option) => selectedCodes.includes(option.code));
-  }
-
-  function toggleRegionCode(selectedCodes: string[], code: string): string[] {
-    const already = selectedCodes.includes(code);
-    if (!already && selectedCodes.length >= 5) {
-      return selectedCodes;
-    }
-
-    return toggleSelection(selectedCodes, code);
-  }
 
   const loadAdminData = useCallback(async () => {
     setAdminLoadErrors({});
@@ -1137,364 +1013,32 @@ export default function MyPage2() {
         </div>
 
         {activeTab === 'account' && !isAdmin && (
-          <div className="account-card">
-            <div className="account-card-head">
-              <h2>계정 정보</h2>
-              <button className="btn-edit" onClick={() => void handleAccountSave()} disabled={saving}>저장</button>
-            </div>
-
-            <div className="account-edit-form">
-              <div className="account-field">
-                <label>이름</label>
-                <input className="account-input" value={profileForm.name} onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} />
-              </div>
-              <div className="account-field account-field--readonly">
-                <label>이메일</label>
-                <span>{user.email}</span>
-              </div>
-              <div className="account-field">
-                <label>전화번호</label>
-                <input className="account-input" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} />
-              </div>
-              <div className="account-field">
-                <label>소개</label>
-                <textarea className="account-textarea" rows={4} value={profileForm.intro} onChange={(event) => setProfileForm((current) => ({ ...current, intro: event.target.value }))} />
-              </div>
-            </div>
-
-            {summary && (
-              <div className="admin-grid" style={{ marginTop: '1.5rem' }}>
-                <div className="metric-card">
-                  <span className="metric-label">총 프로젝트</span>
-                  <strong className="metric-value">{summary.projectStats.totalProjects}</strong>
-                </div>
-                <div className="metric-card">
-                  <span className="metric-label">완료 프로젝트</span>
-                  <strong className="metric-value">{summary.projectStats.completedProjects}</strong>
-                </div>
-                <div className="metric-card">
-                  <span className="metric-label">작성 리뷰</span>
-                  <strong className="metric-value">{summary.reviewStats.writtenReviewCount}</strong>
-                </div>
-                <div className="metric-card">
-                  <span className="metric-label">미읽음 알림</span>
-                  <strong className="metric-value">{summary.notificationSummary.unreadNotificationCount}</strong>
-                </div>
-              </div>
-            )}
-
-            {!isFreelancer && (
-              <div className="account-card" style={{ marginTop: '1.5rem' }}>
-                <div className="account-card-head">
-                  <h2>메이트 신청</h2>
-                  <button
-                    className={showMateApplyForm ? 'btn-cancel' : 'btn-edit'}
-                    onClick={() => setShowMateApplyForm((current) => !current)}
-                    disabled={saving}
-                  >
-                    {showMateApplyForm ? '접기' : '신청 폼 열기'}
-                  </button>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                  메이트로 등록하면 돌봄 서비스를 제공하고 의뢰를 받을 수 있습니다. 아래 정보를 입력하고 신청하세요.
-                </p>
-
-                {showMateApplyForm && (
-                <div className="account-edit-form">
-                  <div className="account-field">
-                    <label>경력 소개</label>
-                    <textarea
-                      className="account-textarea"
-                      rows={4}
-                      placeholder="본인의 경력이나 돌봄 경험을 간략히 소개해 주세요"
-                      value={applyForm.careerDescription}
-                      onChange={(event) => setApplyForm((current) => ({ ...current, careerDescription: event.target.value }))}
-                    />
-                  </div>
-                  <div className="account-field">
-                    <label>프로필 공개 설정</label>
-                    <div className="mp-chip-group">
-                      <button
-                        type="button"
-                        className={`mp-chip${applyForm.publicYn ? ' mp-chip--selected' : ''}`}
-                        onClick={() => setApplyForm((current) => ({ ...current, publicYn: !current.publicYn }))}
-                      >
-                        {applyForm.publicYn ? '✓ 공개' : '비공개'}
-                      </button>
-                      <button
-                        type="button"
-                        className={`mp-chip${applyForm.caregiverYn ? ' mp-chip--selected' : ''}`}
-                        onClick={() => setApplyForm((current) => ({ ...current, caregiverYn: !current.caregiverYn }))}
-                      >
-                        {applyForm.caregiverYn ? '✓ 요양보호사' : '일반 활동자'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>활동 지역 (최대 5개 선택)</label>
-                    <div className="mp-region-selector">
-                      <div className="mp-chip-group">
-                        {sidoRegionOptions.map((region) => {
-                          const subRegions = getSubRegionOptions(region.code);
-                          const isExpanded = expandedApplyRegionCode === region.code;
-                          const hasSelectedChild = hasSelectedSubRegion(applyForm.activityRegionCodes, region.code);
-                          const isSelected = applyForm.activityRegionCodes.includes(region.code) || hasSelectedChild;
-                          return (
-                            <button
-                            key={region.code}
-                            type="button"
-                            className={`mp-chip${isSelected ? ' mp-chip--selected' : ''}${isExpanded ? ' mp-chip--expanded' : ''}`}
-                            onClick={() => {
-                              if (subRegions.length > 0) {
-                                setExpandedApplyRegionCode((current) => (current === region.code ? '' : region.code));
-                                return;
-                              }
-
-                              setApplyForm((current) => ({
-                                ...current,
-                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, region.code),
-                              }));
-                            }}
-                          >
-                            {isSelected ? `✓ ${region.name}` : region.name}
-                          </button>
-                          );
-                        })}
-                      </div>
-                      {expandedApplyRegionCode && getSubRegionOptions(expandedApplyRegionCode).length > 0 && (
-                        <div className="mp-subregion-panel">
-                          <div className="mp-subregion-title">{labelOf(regionMap, expandedApplyRegionCode)}</div>
-                          <div className="mp-chip-group">
-                            {getSubRegionOptions(expandedApplyRegionCode).map((subRegion) => (
-                              <button
-                                key={subRegion.code}
-                                type="button"
-                                className={`mp-chip mp-chip--sub${applyForm.activityRegionCodes.includes(subRegion.code) ? ' mp-chip--selected' : ''}`}
-                                onClick={() => setApplyForm((current) => ({
-                                  ...current,
-                                  activityRegionCodes: toggleRegionCode(current.activityRegionCodes, subRegion.code),
-                                }))}
-                              >
-                                {applyForm.activityRegionCodes.includes(subRegion.code) ? `✓ ${subRegion.name}` : subRegion.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>가능 시간대 (복수 선택)</label>
-                    <div className="mp-chip-group">
-                      {timeSlotOptions.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          className={`mp-chip${applyForm.availableTimeSlotCodes.includes(option.code) ? ' mp-chip--selected' : ''}`}
-                          onClick={() => setApplyForm((current) => ({
-                            ...current,
-                            availableTimeSlotCodes: toggleSelection(current.availableTimeSlotCodes, option.code),
-                          }))}
-                        >
-                          {applyForm.availableTimeSlotCodes.includes(option.code) ? `✓ ${option.name}` : option.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>제공 서비스 유형 (복수 선택)</label>
-                    <div className="mp-chip-group">
-                      {projectTypeOptions.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          className={`mp-chip${applyForm.projectTypeCodes.includes(option.code) ? ' mp-chip--selected' : ''}`}
-                          onClick={() => setApplyForm((current) => ({
-                            ...current,
-                            projectTypeCodes: toggleSelection(current.projectTypeCodes, option.code),
-                          }))}
-                        >
-                          {applyForm.projectTypeCodes.includes(option.code) ? `✓ ${option.name}` : option.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>포트폴리오 파일 (선택)</label>
-                    <label className="certify-upload-label">
-                      + 파일 추가
-                      <input
-                        hidden
-                        type="file"
-                        onChange={(e) => {
-                          handleApplyFileAdd(e.target.files?.[0] ?? null);
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-                    {applyFiles.length > 0 && (
-                      <ul className="certify-file-list" style={{ marginTop: '0.5rem' }}>
-                        {applyFiles.map((file, index) => (
-                          <li key={index} className="certify-file-item">
-                            <span>📄</span>
-                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
-                            <button
-                              type="button"
-                              className="certify-file-remove"
-                              onClick={() => handleApplyFileRemove(index)}
-                              aria-label="삭제"
-                            >
-                              ✕
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="certify-submit-btn"
-                    onClick={() => void handleApplyAsFreelancer()}
-                    disabled={saving}
-                  >
-                    {saving ? '처리 중...' : '메이트 신청하기'}
-                  </button>
-                </div>
-                )}
-              </div>
-            )}
-
-            {isFreelancer && (
-              <div className="account-card" style={{ marginTop: '1.5rem' }}>
-                <div className="account-card-head">
-                  <h2>프리랜서 프로필</h2>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {showFreelancerProfileForm && (
-                      <button className="btn-edit" onClick={() => void handleFreelancerProfileSave()} disabled={saving}>저장</button>
-                    )}
-                    <button
-                      type="button"
-                      className={showFreelancerProfileForm ? 'btn-cancel' : 'btn-edit'}
-                      onClick={() => setShowFreelancerProfileForm((v) => !v)}
-                    >
-                      {showFreelancerProfileForm ? '접기' : '편집'}
-                    </button>
-                  </div>
-                </div>
-
-                {showFreelancerProfileForm && <div className="account-edit-form">
-                  <div className="account-field">
-                    <label>경력 설명</label>
-                    <textarea
-                      className="account-textarea"
-                      rows={4}
-                      value={freelancerForm.careerDescription}
-                      onChange={(event) => setFreelancerForm((current) => ({ ...current, careerDescription: event.target.value }))}
-                    />
-                  </div>
-                  <div className="account-field">
-                    <label>공개 설정</label>
-                    <div className="type-selector">
-                      <button type="button" className={`type-btn${freelancerForm.publicYn ? ' selected' : ''}`} onClick={() => setFreelancerForm((current) => ({ ...current, publicYn: !current.publicYn }))}>
-                        {freelancerForm.publicYn ? '공개중' : '비공개'}
-                      </button>
-                      <button type="button" className={`type-btn${freelancerForm.caregiverYn ? ' selected' : ''}`} onClick={() => setFreelancerForm((current) => ({ ...current, caregiverYn: !current.caregiverYn }))}>
-                        {freelancerForm.caregiverYn ? '요양보호사' : '일반 활동자'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>활동 지역 (최대 5개 선택)</label>
-                    <div className="type-selector">
-                      {sidoRegionOptions.map((region) => {
-                        const subRegions = getSubRegionOptions(region.code);
-                        const isExpanded = expandedFreelancerRegionCode === region.code;
-                        const hasSelectedChild = hasSelectedSubRegion(freelancerForm.activityRegionCodes, region.code);
-                        const isSelected = freelancerForm.activityRegionCodes.includes(region.code) || hasSelectedChild;
-                        return (
-                          <button
-                            key={region.code}
-                          type="button"
-                            className={`type-btn${isSelected ? ' selected' : ''}`}
-                            onClick={() => {
-                              if (subRegions.length > 0) {
-                                setExpandedFreelancerRegionCode((current) => (current === region.code ? '' : region.code));
-                                return;
-                              }
-
-                              setFreelancerForm((current) => ({
-                                ...current,
-                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, region.code),
-                              }));
-                            }}
-                            aria-expanded={subRegions.length > 0 ? isExpanded : undefined}
-                        >
-                          {region.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {expandedFreelancerRegionCode && getSubRegionOptions(expandedFreelancerRegionCode).length > 0 && (
-                      <div className="mp-subregion-panel">
-                        <div className="mp-subregion-title">{labelOf(regionMap, expandedFreelancerRegionCode)}</div>
-                        <div className="type-selector">
-                          {getSubRegionOptions(expandedFreelancerRegionCode).map((subRegion) => (
-                            <button
-                              key={subRegion.code}
-                              type="button"
-                              className={`type-btn${freelancerForm.activityRegionCodes.includes(subRegion.code) ? ' selected' : ''}`}
-                              onClick={() => setFreelancerForm((current) => ({
-                                ...current,
-                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, subRegion.code),
-                              }))}
-                            >
-                              {subRegion.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="account-field">
-                    <label>가능 시간대</label>
-                    <div className="type-selector">
-                      {timeSlotOptions.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          className={`type-btn${freelancerForm.availableTimeSlotCodes.includes(option.code) ? ' selected' : ''}`}
-                          onClick={() => setFreelancerForm((current) => ({
-                            ...current,
-                            availableTimeSlotCodes: toggleSelection(current.availableTimeSlotCodes, option.code),
-                          }))}
-                        >
-                          {option.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="account-field">
-                    <label>서비스 유형</label>
-                    <div className="type-selector">
-                      {projectTypeOptions.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          className={`type-btn${freelancerForm.projectTypeCodes.includes(option.code) ? ' selected' : ''}`}
-                          onClick={() => setFreelancerForm((current) => ({
-                            ...current,
-                            projectTypeCodes: toggleSelection(current.projectTypeCodes, option.code),
-                          }))}
-                        >
-                          {option.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>}
-              </div>
-            )}
-          </div>
+          <AccountTabContent
+            user={user}
+            summary={summary}
+            saving={saving}
+            profileForm={profileForm}
+            setProfileForm={setProfileForm}
+            onSaveAccount={() => void handleAccountSave()}
+            isFreelancer={isFreelancer}
+            showMateApplyForm={showMateApplyForm}
+            setShowMateApplyForm={setShowMateApplyForm}
+            applyForm={applyForm}
+            setApplyForm={setApplyForm}
+            applyFiles={applyFiles}
+            onApplyFileAdd={handleApplyFileAdd}
+            onApplyFileRemove={handleApplyFileRemove}
+            onApplyAsFreelancer={() => void handleApplyAsFreelancer()}
+            showFreelancerProfileForm={showFreelancerProfileForm}
+            setShowFreelancerProfileForm={setShowFreelancerProfileForm}
+            freelancerForm={freelancerForm}
+            setFreelancerForm={setFreelancerForm}
+            onSaveFreelancerProfile={() => void handleFreelancerProfileSave()}
+            regionOptions={regionOptions}
+            regionMap={regionMap}
+            timeSlotOptions={timeSlotOptions}
+            projectTypeOptions={projectTypeOptions}
+          />
         )}
 
         {activeTab === 'reviews' && !isAdmin && (
