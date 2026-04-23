@@ -222,6 +222,8 @@ export default function MyPage2() {
   const [projectTypeMap, setProjectTypeMap] = useState<Map<string, string>>(new Map());
   const [regionMap, setRegionMap] = useState<Map<string, string>>(new Map());
   const [timeSlotMap, setTimeSlotMap] = useState<Map<string, string>>(new Map());
+  const [expandedApplyRegionCode, setExpandedApplyRegionCode] = useState<string>('');
+  const [expandedFreelancerRegionCode, setExpandedFreelancerRegionCode] = useState<string>('');
 
   const [freelancerProfile, setFreelancerProfile] = useState<FreelancerDetailResponse | null>(null);
   const [portfolioFiles, setPortfolioFiles] = useState<FreelancerFileResponse[]>([]);
@@ -244,6 +246,27 @@ export default function MyPage2() {
   const [adminReports, setAdminReports] = useState<AdminReportListItemResponse[]>([]);
   const [selectedAdminReport, setSelectedAdminReport] = useState<AdminReportDetailResponse | null>(null);
   const [adminLoadErrors, setAdminLoadErrors] = useState<AdminLoadErrors>({});
+
+  const sidoRegionOptions = sortSido(regionOptions.filter((option) => option.regionLevel === 1 || !option.parentRegionCode));
+
+  function getSubRegionOptions(parentRegionCode: string): CodeLookupResponse[] {
+    return regionOptions
+      .filter((option) => option.parentRegionCode === parentRegionCode)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  function hasSelectedSubRegion(selectedCodes: string[], parentRegionCode: string): boolean {
+    return getSubRegionOptions(parentRegionCode).some((option) => selectedCodes.includes(option.code));
+  }
+
+  function toggleRegionCode(selectedCodes: string[], code: string): string[] {
+    const already = selectedCodes.includes(code);
+    if (!already && selectedCodes.length >= 5) {
+      return selectedCodes;
+    }
+
+    return toggleSelection(selectedCodes, code);
+  }
 
   const loadAdminData = useCallback(async () => {
     setAdminLoadErrors({});
@@ -1211,21 +1234,53 @@ export default function MyPage2() {
                     <label>활동 지역 (최대 5개 선택)</label>
                     <div className="mp-region-selector">
                       <div className="mp-chip-group">
-                        {sortSido(regionOptions.filter((o) => !o.parentRegionCode)).map((region) => (
-                          <button
+                        {sidoRegionOptions.map((region) => {
+                          const subRegions = getSubRegionOptions(region.code);
+                          const isExpanded = expandedApplyRegionCode === region.code;
+                          const hasSelectedChild = hasSelectedSubRegion(applyForm.activityRegionCodes, region.code);
+                          const isSelected = applyForm.activityRegionCodes.includes(region.code) || hasSelectedChild;
+                          return (
+                            <button
                             key={region.code}
                             type="button"
-                            className={`mp-chip${applyForm.activityRegionCodes.includes(region.code) ? ' mp-chip--selected' : ''}`}
-                            onClick={() => setApplyForm((current) => {
-                              const already = current.activityRegionCodes.includes(region.code);
-                              if (!already && current.activityRegionCodes.length >= 5) return current;
-                              return { ...current, activityRegionCodes: toggleSelection(current.activityRegionCodes, region.code) };
-                            })}
+                            className={`mp-chip${isSelected ? ' mp-chip--selected' : ''}${isExpanded ? ' mp-chip--expanded' : ''}`}
+                            onClick={() => {
+                              if (subRegions.length > 0) {
+                                setExpandedApplyRegionCode((current) => (current === region.code ? '' : region.code));
+                                return;
+                              }
+
+                              setApplyForm((current) => ({
+                                ...current,
+                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, region.code),
+                              }));
+                            }}
                           >
-                            {applyForm.activityRegionCodes.includes(region.code) ? `✓ ${region.name}` : region.name}
+                            {isSelected ? `✓ ${region.name}` : region.name}
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
+                      {expandedApplyRegionCode && getSubRegionOptions(expandedApplyRegionCode).length > 0 && (
+                        <div className="mp-subregion-panel">
+                          <div className="mp-subregion-title">{labelOf(regionMap, expandedApplyRegionCode)}</div>
+                          <div className="mp-chip-group">
+                            {getSubRegionOptions(expandedApplyRegionCode).map((subRegion) => (
+                              <button
+                                key={subRegion.code}
+                                type="button"
+                                className={`mp-chip mp-chip--sub${applyForm.activityRegionCodes.includes(subRegion.code) ? ' mp-chip--selected' : ''}`}
+                                onClick={() => setApplyForm((current) => ({
+                                  ...current,
+                                  activityRegionCodes: toggleRegionCode(current.activityRegionCodes, subRegion.code),
+                                }))}
+                              >
+                                {applyForm.activityRegionCodes.includes(subRegion.code) ? `✓ ${subRegion.name}` : subRegion.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="account-field">
@@ -1351,21 +1406,54 @@ export default function MyPage2() {
                   <div className="account-field">
                     <label>활동 지역 (최대 5개 선택)</label>
                     <div className="type-selector">
-                      {sortSido(regionOptions.filter((o) => o.regionLevel === 1)).map((option) => (
-                        <button
-                          key={option.code}
+                      {sidoRegionOptions.map((region) => {
+                        const subRegions = getSubRegionOptions(region.code);
+                        const isExpanded = expandedFreelancerRegionCode === region.code;
+                        const hasSelectedChild = hasSelectedSubRegion(freelancerForm.activityRegionCodes, region.code);
+                        const isSelected = freelancerForm.activityRegionCodes.includes(region.code) || hasSelectedChild;
+                        return (
+                          <button
+                            key={region.code}
                           type="button"
-                          className={`type-btn${freelancerForm.activityRegionCodes.includes(option.code) ? ' selected' : ''}`}
-                          onClick={() => setFreelancerForm((current) => {
-                            const already = current.activityRegionCodes.includes(option.code);
-                            if (!already && current.activityRegionCodes.length >= 5) return current;
-                            return { ...current, activityRegionCodes: toggleSelection(current.activityRegionCodes, option.code) };
-                          })}
+                            className={`type-btn${isSelected ? ' selected' : ''}`}
+                            onClick={() => {
+                              if (subRegions.length > 0) {
+                                setExpandedFreelancerRegionCode((current) => (current === region.code ? '' : region.code));
+                                return;
+                              }
+
+                              setFreelancerForm((current) => ({
+                                ...current,
+                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, region.code),
+                              }));
+                            }}
+                            aria-expanded={subRegions.length > 0 ? isExpanded : undefined}
                         >
-                          {option.name}
-                        </button>
-                      ))}
+                          {region.name}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {expandedFreelancerRegionCode && getSubRegionOptions(expandedFreelancerRegionCode).length > 0 && (
+                      <div className="mp-subregion-panel">
+                        <div className="mp-subregion-title">{labelOf(regionMap, expandedFreelancerRegionCode)}</div>
+                        <div className="type-selector">
+                          {getSubRegionOptions(expandedFreelancerRegionCode).map((subRegion) => (
+                            <button
+                              key={subRegion.code}
+                              type="button"
+                              className={`type-btn${freelancerForm.activityRegionCodes.includes(subRegion.code) ? ' selected' : ''}`}
+                              onClick={() => setFreelancerForm((current) => ({
+                                ...current,
+                                activityRegionCodes: toggleRegionCode(current.activityRegionCodes, subRegion.code),
+                              }))}
+                            >
+                              {subRegion.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="account-field">
                     <label>가능 시간대</label>
