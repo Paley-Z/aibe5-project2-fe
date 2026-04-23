@@ -202,6 +202,8 @@ export default function MyPage2() {
   const [profileForm, setProfileForm] = useState<ProfileFormState>(EMPTY_PROFILE_FORM);
   const [freelancerForm, setFreelancerForm] = useState<FreelancerFormState>(EMPTY_FREELANCER_FORM);
   const [applyForm, setApplyForm] = useState<FreelancerFormState>(EMPTY_FREELANCER_FORM);
+  const [applyFiles, setApplyFiles] = useState<File[]>([]);
+  const [applySelectedSido, setApplySelectedSido] = useState<string | null>(null);
   const [showMateApplyForm, setShowMateApplyForm] = useState(false);
   const [summary, setSummary] = useState<UserMyPageResponse | null>(null);
   const [reviews, setReviews] = useState<ReviewSummaryResponse[]>([]);
@@ -545,6 +547,11 @@ export default function MyPage2() {
 
     try {
       const createdProfile = await createMyFreelancerProfile(toFreelancerRequest(applyForm));
+
+      for (const file of applyFiles) {
+        await uploadMyFreelancerFile(file);
+      }
+
       setNotice('프리랜서 프로필 정보를 동기화하는 중입니다.');
       const nextUser = await bootstrapSession(true);
       const syncedUser = nextUser ?? {
@@ -558,17 +565,29 @@ export default function MyPage2() {
       setFreelancerProfile(createdProfile);
       setFreelancerForm(toFreelancerForm(createdProfile));
       setApplyForm(EMPTY_FREELANCER_FORM);
+      setApplyFiles([]);
       setShowMateApplyForm(false);
-      setPortfolioFiles([]);
+      const uploadedFiles = await getMyFreelancerFiles();
+      setPortfolioFiles(uploadedFiles);
       setVerifications(await getMyVerifications());
       await refreshProfileSummary();
       handleTabChange('certify');
-      setNotice('프리랜서 프로필 신청이 완료되었습니다. 인증 요청을 등록해 주세요.');
+      const fileMsg = applyFiles.length > 0 ? ` 포트폴리오 ${applyFiles.length}개가 업로드되었습니다.` : '';
+      setNotice(`프리랜서 프로필 신청이 완료되었습니다.${fileMsg} 인증 요청을 등록해 주세요.`);
     } catch (caughtError) {
       setError(getErrorMessage(caughtError, '메이트 신청에 실패했습니다.'));
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleApplyFileAdd(file: File | null) {
+    if (!file) return;
+    setApplyFiles((prev) => [...prev, file]);
+  }
+
+  function handleApplyFileRemove(index: number) {
+    setApplyFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleFreelancerProfileSave() {
@@ -1133,8 +1152,12 @@ export default function MyPage2() {
               <div className="account-card" style={{ marginTop: '1.5rem' }}>
                 <div className="account-card-head">
                   <h2>메이트 신청</h2>
-                  <button className="btn-edit" onClick={() => setShowMateApplyForm((current) => !current)} disabled={saving}>
-                    {showMateApplyForm ? '접기' : '신청하기'}
+                  <button
+                    className={showMateApplyForm ? 'btn-cancel' : 'btn-edit'}
+                    onClick={() => setShowMateApplyForm((current) => !current)}
+                    disabled={saving}
+                  >
+                    {showMateApplyForm ? '접기' : '신청 폼 열기'}
                   </button>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
@@ -1155,84 +1178,172 @@ export default function MyPage2() {
                   </div>
                   <div className="account-field">
                     <label>프로필 공개 설정</label>
-                    <div className="type-selector">
+                    <div className="mp-chip-group">
                       <button
                         type="button"
-                        className={`type-btn${applyForm.publicYn ? ' selected' : ''}`}
+                        className={`mp-chip${applyForm.publicYn ? ' mp-chip--selected' : ''}`}
                         onClick={() => setApplyForm((current) => ({ ...current, publicYn: !current.publicYn }))}
                       >
-                        {applyForm.publicYn ? '공개' : '비공개'}
+                        {applyForm.publicYn ? '✓ 공개' : '비공개'}
                       </button>
                       <button
                         type="button"
-                        className={`type-btn${applyForm.caregiverYn ? ' selected' : ''}`}
+                        className={`mp-chip${applyForm.caregiverYn ? ' mp-chip--selected' : ''}`}
                         onClick={() => setApplyForm((current) => ({ ...current, caregiverYn: !current.caregiverYn }))}
                       >
-                        {applyForm.caregiverYn ? '요양보호사' : '일반 활동자'}
+                        {applyForm.caregiverYn ? '✓ 요양보호사' : '일반 활동자'}
                       </button>
                     </div>
                   </div>
                   <div className="account-field">
                     <label>활동 지역 (복수 선택)</label>
-                    <div className="type-selector">
-                      {regionOptions.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          className={`type-btn${applyForm.activityRegionCodes.includes(option.code) ? ' selected' : ''}`}
-                          onClick={() => setApplyForm((current) => ({
-                            ...current,
-                            activityRegionCodes: toggleSelection(current.activityRegionCodes, option.code),
-                          }))}
-                        >
-                          {option.name}
-                        </button>
-                      ))}
+                    <div className="mp-region-selector">
+                      {regionOptions.some((o) => o.regionLevel === 1) ? (
+                        <>
+                          <div className="mp-chip-group mp-chip-group--sido">
+                            {regionOptions.filter((o) => o.regionLevel === 1).map((sido) => (
+                              <button
+                                key={sido.code}
+                                type="button"
+                                className={`mp-chip${applySelectedSido === sido.code ? ' mp-chip--active-sido' : ''}`}
+                                onClick={() => setApplySelectedSido((prev) => prev === sido.code ? null : sido.code)}
+                              >
+                                {sido.name}
+                              </button>
+                            ))}
+                          </div>
+                          {applySelectedSido && (
+                            <div className="mp-chip-group mp-chip-group--sigungu">
+                              {regionOptions.filter((o) => o.regionLevel === 2 && o.parentRegionCode === applySelectedSido).map((sigungu) => (
+                                <button
+                                  key={sigungu.code}
+                                  type="button"
+                                  className={`mp-chip${applyForm.activityRegionCodes.includes(sigungu.code) ? ' mp-chip--selected' : ''}`}
+                                  onClick={() => setApplyForm((current) => ({
+                                    ...current,
+                                    activityRegionCodes: toggleSelection(current.activityRegionCodes, sigungu.code),
+                                  }))}
+                                >
+                                  {applyForm.activityRegionCodes.includes(sigungu.code) ? `✓ ${sigungu.name}` : sigungu.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="mp-chip-group">
+                          {regionOptions.map((option) => (
+                            <button
+                              key={option.code}
+                              type="button"
+                              className={`mp-chip${applyForm.activityRegionCodes.includes(option.code) ? ' mp-chip--selected' : ''}`}
+                              onClick={() => setApplyForm((current) => ({
+                                ...current,
+                                activityRegionCodes: toggleSelection(current.activityRegionCodes, option.code),
+                              }))}
+                            >
+                              {applyForm.activityRegionCodes.includes(option.code) ? `✓ ${option.name}` : option.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {applyForm.activityRegionCodes.length > 0 && (
+                        <div className="mp-selected-regions">
+                          {applyForm.activityRegionCodes.map((code) => {
+                            const region = regionOptions.find((o) => o.code === code);
+                            return region ? (
+                              <span key={code} className="mp-selected-tag">
+                                {region.name}
+                                <button
+                                  type="button"
+                                  className="mp-selected-tag-remove"
+                                  onClick={() => setApplyForm((current) => ({
+                                    ...current,
+                                    activityRegionCodes: current.activityRegionCodes.filter((c) => c !== code),
+                                  }))}
+                                >×</button>
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="account-field">
                     <label>가능 시간대 (복수 선택)</label>
-                    <div className="type-selector">
+                    <div className="mp-chip-group">
                       {timeSlotOptions.map((option) => (
                         <button
                           key={option.code}
                           type="button"
-                          className={`type-btn${applyForm.availableTimeSlotCodes.includes(option.code) ? ' selected' : ''}`}
+                          className={`mp-chip${applyForm.availableTimeSlotCodes.includes(option.code) ? ' mp-chip--selected' : ''}`}
                           onClick={() => setApplyForm((current) => ({
                             ...current,
                             availableTimeSlotCodes: toggleSelection(current.availableTimeSlotCodes, option.code),
                           }))}
                         >
-                          {option.name}
+                          {applyForm.availableTimeSlotCodes.includes(option.code) ? `✓ ${option.name}` : option.name}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="account-field">
                     <label>제공 서비스 유형 (복수 선택)</label>
-                    <div className="type-selector">
+                    <div className="mp-chip-group">
                       {projectTypeOptions.map((option) => (
                         <button
                           key={option.code}
                           type="button"
-                          className={`type-btn${applyForm.projectTypeCodes.includes(option.code) ? ' selected' : ''}`}
+                          className={`mp-chip${applyForm.projectTypeCodes.includes(option.code) ? ' mp-chip--selected' : ''}`}
                           onClick={() => setApplyForm((current) => ({
                             ...current,
                             projectTypeCodes: toggleSelection(current.projectTypeCodes, option.code),
                           }))}
                         >
-                          {option.name}
+                          {applyForm.projectTypeCodes.includes(option.code) ? `✓ ${option.name}` : option.name}
                         </button>
                       ))}
                     </div>
                   </div>
+                  <div className="account-field">
+                    <label>포트폴리오 파일 (선택)</label>
+                    <label className="certify-upload-label">
+                      + 파일 추가
+                      <input
+                        hidden
+                        type="file"
+                        onChange={(e) => {
+                          handleApplyFileAdd(e.target.files?.[0] ?? null);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {applyFiles.length > 0 && (
+                      <ul className="certify-file-list" style={{ marginTop: '0.5rem' }}>
+                        {applyFiles.map((file, index) => (
+                          <li key={index} className="certify-file-item">
+                            <span>📄</span>
+                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+                            <button
+                              type="button"
+                              className="certify-file-remove"
+                              onClick={() => handleApplyFileRemove(index)}
+                              aria-label="삭제"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    className="btn-edit"
+                    className="certify-submit-btn"
                     onClick={() => void handleApplyAsFreelancer()}
                     disabled={saving}
                   >
-                    제출하기
+                    {saving ? '처리 중...' : '메이트 신청하기'}
                   </button>
                 </div>
                 )}

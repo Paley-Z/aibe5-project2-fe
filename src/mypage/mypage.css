@@ -2018,3 +2018,87 @@ body {
     width: 4.5rem;
   }
 }
+
+/* ─── 메이트 신청 폼 칩 버튼 ─────────────────────────────── */
+.mp-chip-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.mp-chip {
+  background: var(--dark-bg);
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mp-chip:hover:not(.mp-chip--selected) {
+  border-color: #555;
+  color: var(--text-light);
+}
+
+.mp-chip--selected {
+  background: var(--green-accent);
+  border-color: var(--green-accent);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.mp-region-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.mp-chip-group--sigungu {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+}
+
+.mp-chip--active-sido {
+  border-color: var(--green-accent);
+  color: var(--green-accent);
+  font-weight: 600;
+}
+
+.mp-selected-regions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.mp-selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(155,168,130,0.15);
+  border: 1px solid var(--green-accent);
+  border-radius: 20px;
+  color: var(--green-accent);
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.mp-selected-tag-remove {
+  background: none;
+  border: none;
+  color: var(--green-accent);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  line-height: 1;
+}
+.mp-selected-tag-remove:hover {
+  color: var(--text-light);
+}
