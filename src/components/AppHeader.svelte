@@ -5,6 +5,7 @@
   import { canSendAnnouncement, effectiveNoticeRole } from '../store/accessControl';
   import { getTheme, setTheme, THEME_EVENT, type AppTheme } from '../store/theme';
   import {
+    deleteNotification,
     getNotifications,
     markAllNotificationsRead,
     markNotificationRead,
@@ -216,6 +217,11 @@
     await refreshNotifications(user);
   }
 
+  async function handleDeleteNotification(notificationId: number) {
+    await deleteNotification(notificationId);
+    await refreshNotifications(user);
+  }
+
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (!target.closest('.header-actions')) {
@@ -290,6 +296,31 @@
             {:else}
               <div class="header-notification-list">
                 {#each notifications as notification (notification.notificationId)}
+                  <div class="header-notification-row">
+                    <button
+                      type="button"
+                      class={`header-notification-item${notification.isRead ? '' : ' unread'}`}
+                      onclick={() => handleNotificationSelect(notification)}
+                    >
+                      <div class="header-notification-top">
+                        <strong>{translateNotificationText(notification.title)}</strong>
+                        <span>{formatNotificationTime(notification.createdAt)}</span>
+                      </div>
+                      <p class="header-notification-message">{translateNotificationText(notification.content)}</p>
+                      <span class="header-notification-meta">{getNotificationMeta(notification)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="header-notification-delete"
+                      aria-label="알림 삭제"
+                      onclick={(event) => {
+                        event.stopPropagation();
+                        void handleDeleteNotification(notification.notificationId);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                   <button
                     type="button"
                     class={`header-notification-item${notification.isRead ? '' : ' unread'}`}
