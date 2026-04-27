@@ -130,7 +130,7 @@ export default function AiMatchPage() {
     void Promise.all([getProjectTypeCodes(), getRegionCodes(), getAvailableTimeSlotCodes()]).then(
       ([types, regions, slots]) => {
         setProjectTypeCodes(types);
-        setRegionCodes(regions.filter((r) => r.code !== 'SEOUL_GANGNAM'));
+        setRegionCodes(regions);
         setTimeSlotCodes(slots);
         const merged = new Map([
           ...types.map((t) => [t.code, t.name] as [string, string]),

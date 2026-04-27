@@ -287,14 +287,12 @@ export default function MyPage2() {
           getAvailableTimeSlotCodes(),
           getReviewTagCodes(),
         ]);
-        const filteredRegions = regions.filter((region) => region.code !== 'SEOUL_GANGNAM');
-
         setProjectTypeOptions(projectTypes);
-        setRegionOptions(filteredRegions);
+        setRegionOptions(regions);
         setTimeSlotOptions(timeSlots);
         setReviewTags(tagCodes);
         setProjectTypeMap(new Map(projectTypes.map((item) => [item.code, item.name])));
-        setRegionMap(new Map(filteredRegions.map((item) => [item.code, item.name])));
+        setRegionMap(new Map(regions.map((item) => [item.code, item.name])));
         setTimeSlotMap(new Map(timeSlots.map((item) => [item.code, item.name])));
 
         const myPageResponse = await getMyPage();

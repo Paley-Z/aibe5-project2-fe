@@ -57,7 +57,6 @@ const FREELANCER_PROJECT_FILTERS: Array<{ value: FreelancerProjectFilter; label:
 ];
 const PROJECT_LIST_FILTERS = new Set<FreelancerProjectFilter>(['ALL', 'REQUESTED']);
 const ALL_PROJECTS_PAGE_SIZE = 9;
-const EXCLUDED_REGION_CODES = new Set(['SEOUL_GANGNAM']);
 const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   REQUESTED: '요청',
   ACCEPTED: '수락',
@@ -263,7 +262,6 @@ export default function ProjectPage3() {
         setProjectTypeOptions(projectTypes.map(({ code, name }) => ({ code, name })));
         setRegionOptions(
           regions
-            .filter((region) => !EXCLUDED_REGION_CODES.has(region.code))
             .map(({ code, name, parentRegionCode, regionLevel }) => ({ code, name, parentRegionCode, regionLevel })),
         );
         setReviewTagOptions(reviewTags.map(({ code, name }) => ({ code, name })));
