@@ -1,8 +1,7 @@
-# 안심동행 Frontend
+# 안심동행 - 이음 Frontend
 
-안심동행 프론트엔드 저장소입니다. React와 Svelte를 함께 사용하는 Vite 기반 SPA로, 사용자 인증, 프리랜서 탐색, 프로젝트 요청, 제안 관리, 리뷰/신고, 알림, 채팅, AI 메이트 추천 화면을 제공합니다.
+안심동행 - 이음 프론트엔드 저장소입니다. React와 Svelte를 함께 사용하는 Vite 기반 SPA로, 사용자 인증, 프리랜서 탐색, 프로젝트 요청, 제안 관리, 리뷰/신고, 알림, 채팅, AI 메이트 추천 화면을 제공합니다.
 
-- Frontend Repository: [AIBE5_Project2_Team4_FE](https://github.com/prgrms-aibe-devcourse/AIBE5_Project2_Team4_FE)
 - Backend Repository: [AIBE5_Project2_Team4_BE](https://github.com/prgrms-aibe-devcourse/AIBE5_Project2_Team4_BE)
 - 기본 API 서버: `http://localhost:8080`
 - 기본 개발 서버: `http://localhost:5173`
