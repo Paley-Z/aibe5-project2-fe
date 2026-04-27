@@ -6,7 +6,6 @@
   let canvas: HTMLCanvasElement;
   let rafId: number;
   let frames: ImageBitmap[] = [];
-  let loadProgress = 0;
   let contactSubmitted = false;
   let contactError = '';
 
@@ -51,7 +50,6 @@
         resizeQuality: 'high',
       });
       frames.push(bitmap);
-      loadProgress = Math.round(((i + 1) / total) * 100);
     }
 
     // 첫 프레임 표시
@@ -134,11 +132,6 @@
     <div class="character-container">
       <div class="character-placeholder">
         <canvas bind:this={canvas} width="540" height="960" class="character-video"></canvas>
-        {#if loadProgress < 100}
-          <div class="character-loading">
-            <div class="character-loading-bar" style="width: {loadProgress}%"></div>
-          </div>
-        {/if}
       </div>
     </div>
   </section>
